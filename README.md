@@ -232,7 +232,7 @@ or `PAAPI_ACCESS_KEY` + `PAAPI_SECRET_KEY` + `PAAPI_PARTNER_TAG`. The workflow p
 up whatever is present and falls back to sample data otherwise.
 
 How it holds price history without a database server: each run restores SQLite from
-`data/price-history.ndjson`, fetches, and writes the file back. It's append-only text,
+`history/price-history.ndjson`, fetches, and writes the file back. It's append-only text,
 so a twice-daily fetch adds a couple of KB that git stores as a small delta — where a
 committed SQLite file would be a fresh ~1 MB binary blob every run.
 
@@ -358,7 +358,9 @@ src/
   history.js    SQLite ⇄ NDJSON, so GitHub Actions can carry history between runs
   export-static.js  builds ./site for GitHub Pages
 public/       index.html · app.js (canvas sparklines) · styles.css
-data/         prices.db (gitignored) · price-history.ndjson (committed)
+data/         prices.db — disposable, gitignored, rebuilt from history/ on demand
+history/      price-history.ndjson — the committed record, deliberately outside data/
+              so `rm -rf data` to reset the database cannot take the history with it
 .github/      workflows/prices.yml — 12h fetch, commit history, publish to Pages
 ```
 

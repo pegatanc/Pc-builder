@@ -1,10 +1,9 @@
 node_modules/
 site/
 
-# The database itself is disposable, but the NDJSON history is the record the
-# Pages workflow carries between runs — keep that one file tracked.
-data/*
-!data/price-history.ndjson
+# Entirely disposable: the SQLite database is rebuilt from history/ on demand.
+# The committed price record lives in history/, deliberately outside this dir.
+data/
 
 *.db
 *.db-shm
