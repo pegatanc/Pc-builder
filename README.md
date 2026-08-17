@@ -180,9 +180,22 @@ The app also runs as a static site. `.github/workflows/prices.yml` fetches price
 on a 12-hour cron, commits the history back to the repo, builds a static copy and
 publishes it to Pages — no server, no bill.
 
-**Enable it once:** repo **Settings → Pages → Source: GitHub Actions**. Then run the
-workflow (Actions tab → *Update prices and publish* → *Run workflow*) or wait for the
-schedule. It publishes to `https://<user>.github.io/<repo>/`.
+**Enable it once, by hand:** repo **Settings → Pages → Build and deployment → Source:
+GitHub Actions**. Then run the workflow (Actions tab → *Update prices and publish* →
+*Run workflow*) or wait for the schedule. It publishes to `https://<user>.github.io/<repo>/`.
+
+Two things that make this step easy to get stuck on:
+
+- The **Source** dropdown only exists if the repository is public, or private on a
+  paid plan. On a private repo on the free plan the page shows an upgrade prompt and
+  no dropdown at all — so if you make the repo public, you have to come *back* to this
+  page afterwards to set the Source.
+- It genuinely cannot be automated from inside the workflow. `actions/configure-pages`
+  has an `enablement: true` option, but the default `GITHUB_TOKEN` is allowed to
+  deploy to Pages and not to create the site, so it fails with *"Create Pages site
+  failed: Resource not accessible by integration"*. Until the setting is changed, every
+  run fails at that step with *"Get Pages site failed"* — while every step before it
+  (tests, fetch, history commit, static build) succeeds.
 
 To use real prices instead of sample data, add whichever you have under
 **Settings → Secrets and variables → Actions**: `KEEPA_API_KEY`, `BESTBUY_API_KEY`,
