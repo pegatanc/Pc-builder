@@ -12,7 +12,10 @@
     "seed": "node src/seed.js",
     "fetch": "node src/fetch-once.js",
     "sources": "node src/fetch-once.js --list",
-    "test": "node --test test/*.test.js"
+    "test": "node --test test/*.test.js",
+    "site": "node src/export-static.js",
+    "history:import": "node src/history.js import",
+    "history:export": "node src/history.js export"
   },
   "dependencies": {
     "better-sqlite3": "^11.5.0",

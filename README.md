@@ -29,7 +29,8 @@ Other commands:
 npm run sources   # which price sources are configured, and what each one needs
 npm run fetch     # fetch prices once and exit
 npm run seed      # re-sync config/parts.json into the database
-npm test          # robots.txt precedence, price parsing, structured-data extraction
+npm run site      # build the static site into ./site (see GitHub Pages below)
+npm test          # robots.txt precedence, price parsing, history round-trip
 ```
 
 ## Price sources
@@ -173,6 +174,54 @@ default and hard to misuse:
 forbid automated access even where `robots.txt` is silent. Check before enabling it
 for a given site.
 
+## Publishing to GitHub Pages
+
+The app also runs as a static site. `.github/workflows/prices.yml` fetches prices
+on a 12-hour cron, commits the history back to the repo, builds a static copy and
+publishes it to Pages — no server, no bill.
+
+**Enable it once:** repo **Settings → Pages → Source: GitHub Actions**. Then run the
+workflow (Actions tab → *Update prices and publish* → *Run workflow*) or wait for the
+schedule. It publishes to `https://<user>.github.io/<repo>/`.
+
+To use real prices instead of sample data, add whichever you have under
+**Settings → Secrets and variables → Actions**: `KEEPA_API_KEY`, `BESTBUY_API_KEY`,
+or `PAAPI_ACCESS_KEY` + `PAAPI_SECRET_KEY` + `PAAPI_PARTNER_TAG`. The workflow picks
+up whatever is present and falls back to sample data otherwise.
+
+How it holds price history without a database server: each run restores SQLite from
+`data/price-history.ndjson`, fetches, and writes the file back. It's append-only text,
+so a twice-daily fetch adds a couple of KB that git stores as a small delta — where a
+committed SQLite file would be a fresh ~1 MB binary blob every run.
+
+```bash
+npm run history:import   # NDJSON  → SQLite
+npm run history:export   # SQLite  → NDJSON
+npm run site             # build ./site for Pages
+```
+
+Two differences in the published build:
+
+- **No Refresh button.** There's no server to fetch on demand — use *Run workflow* in
+  the Actions tab instead. `npm run site` rewrites a mode flag in `index.html`, so the
+  static page knows this up front and never requests an API that isn't there.
+- **Nothing is writable from the web,** which is what makes publishing safe given the
+  app has no auth. Don't instead deploy the Express server to a public host as-is:
+  `POST /api/refresh` is unauthenticated, and with a metered source like Keepa that's
+  strangers spending your money.
+
+Worth knowing:
+
+- Scheduled workflows only run from the **default branch**, so Pages won't start
+  updating until this is merged to `main`.
+- GitHub suspends scheduled workflows after 60 days without repo activity; the commits
+  the workflow itself makes count, so an active tracker keeps itself alive.
+- Vercel is a poor fit for this app: its filesystem is ephemeral, so SQLite writes
+  vanish between invocations and history never accumulates. Its Hobby tier also caps
+  cron at once per day — `0 */12 * * *` fails deployment outright rather than degrading.
+  Vercel would need a hosted database (Turso/Postgres) and an async rewrite of the
+  data layer.
+
 ## Configuration
 
 **`config/config.json`** — schedule, alert rule, baseline, and **target prices per part**:
@@ -242,8 +291,11 @@ src/
   db.js         schema + connection
   sources/      paapi · keepa · bestbuy · jsonld · browser · manual · sample
   lib/          robots.js (robots.txt) · http.js (rate-limited fetch) · price.js (price parsing)
+  history.js    SQLite ⇄ NDJSON, so GitHub Actions can carry history between runs
+  export-static.js  builds ./site for GitHub Pages
 public/       index.html · app.js (canvas sparklines) · styles.css
-data/         prices.db — created on first run, gitignored
+data/         prices.db (gitignored) · price-history.ndjson (committed)
+.github/      workflows/prices.yml — 12h fetch, commit history, publish to Pages
 ```
 
 Delete `data/prices.db` to start over.

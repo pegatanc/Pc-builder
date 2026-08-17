@@ -293,19 +293,47 @@ function sourcesScheduleText(sources) {
 
 let lastData = null;
 
+// Set by index.html; `npm run site` rewrites it to 'static' for GitHub Pages.
+const IS_STATIC = window.__TRACKER_MODE__ === 'static';
+
+/**
+ * Works against the live server and against the static GitHub Pages build.
+ * The mode is known up front, so the static build never requests an API that
+ * isn't there (and never logs a 404 on every page load).
+ */
+async function loadJson(apiPath, staticPath) {
+  const url = IS_STATIC ? staticPath : apiPath;
+  const res = await fetch(url, { cache: 'no-cache' });
+  if (!res.ok) throw new Error(`${res.status} fetching ${url}`);
+  return res.json();
+}
+
 async function load() {
-  const [buildRes, sourcesRes] = await Promise.all([
-    fetch('/api/build'),
-    fetch('/api/sources'),
+  const [data, sourceInfo] = await Promise.all([
+    loadJson('/api/build', './build.json'),
+    loadJson('/api/sources', './sources.json'),
   ]);
-  const data = await buildRes.json();
-  const { sources, schedule } = await sourcesRes.json();
-  window.__schedule = schedule;
+  window.__schedule = sourceInfo.schedule;
 
   lastData = data;
   renderSummary(data);
   renderTable(data);
-  renderMeta(data, sources);
+  renderMeta(data, sourceInfo.sources);
+  applyMode(data);
+}
+
+/** In the static build there is no refresh endpoint, so don't offer one. */
+function applyMode(data) {
+  const staticMode = IS_STATIC || data.static === true;
+  const button = document.getElementById('refresh');
+  const note = document.getElementById('static-note');
+
+  button.hidden = staticMode;
+  note.hidden = !staticMode;
+
+  if (staticMode && data.generatedAt) {
+    note.textContent = `Static build · generated ${new Date(data.generatedAt).toLocaleString()}`;
+  }
 }
 
 document.getElementById('refresh').addEventListener('click', async (event) => {

@@ -235,6 +235,11 @@ td.num .delta {
   color: var(--good);
 }
 
+.static-note {
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .pill-warn {
   background: rgba(240, 176, 58, 0.13);
   border-color: rgba(240, 176, 58, 0.4);

@@ -4,7 +4,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>PC Build Price Tracker</title>
-    <link rel="stylesheet" href="/styles.css" />
+    <!-- Relative, not absolute: a GitHub project site is served from /<repo>/ -->
+    <link rel="stylesheet" href="./styles.css" />
     <link
       rel="icon"
       href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🖥️</text></svg>"
@@ -18,6 +19,7 @@
       </div>
       <div class="actions">
         <span id="source-badge" class="pill pill-muted" hidden></span>
+        <span id="static-note" class="static-note" hidden></span>
         <button id="refresh" type="button">Refresh prices</button>
       </div>
     </header>
@@ -51,6 +53,11 @@
       <span id="alert-rule"></span>
     </footer>
 
-    <script src="/app.js"></script>
+    <!-- `npm run site` rewrites this to 'static' when building for GitHub Pages,
+         so the page knows there is no API behind it and never probes for one. -->
+    <script>
+      window.__TRACKER_MODE__ = 'server';
+    </script>
+    <script src="./app.js"></script>
   </body>
 </html>

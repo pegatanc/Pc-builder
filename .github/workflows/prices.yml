@@ -1,0 +1,88 @@
+name: Update prices and publish
+
+on:
+  schedule:
+    # Every 12 hours (UTC). GitHub runs scheduled jobs on a best-effort basis,
+    # so expect drift of a few minutes under load.
+    - cron: '0 */12 * * *'
+  workflow_dispatch: # the manual "refresh" — replaces the button in static mode
+  push:
+    branches: [main]
+    paths:
+      - 'public/**'
+      - 'src/**'
+      - 'config/**'
+      - '.github/workflows/prices.yml'
+
+# Allow committing the refreshed history and publishing to Pages.
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+# Never let two runs fight over the history file or the Pages deployment.
+concurrency:
+  group: prices
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm test
+
+      # Rebuild the database from the history committed in the repo. On the very
+      # first run there is none, and the app backfills sample data instead.
+      - name: Restore price history
+        run: npm run history:import
+
+      - name: Fetch current prices
+        env:
+          # Optional — set these as repository secrets to use real price sources.
+          # Absent, the workflow publishes sample data and says so in the UI.
+          PAAPI_ACCESS_KEY: ${{ secrets.PAAPI_ACCESS_KEY }}
+          PAAPI_SECRET_KEY: ${{ secrets.PAAPI_SECRET_KEY }}
+          PAAPI_PARTNER_TAG: ${{ secrets.PAAPI_PARTNER_TAG }}
+          KEEPA_API_KEY: ${{ secrets.KEEPA_API_KEY }}
+          BESTBUY_API_KEY: ${{ secrets.BESTBUY_API_KEY }}
+        run: npm run fetch
+
+      - name: Save price history
+        run: npm run history:export
+
+      - name: Build static site
+        run: npm run site
+
+      - name: Commit updated history
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/price-history.ndjson
+          if git diff --staged --quiet; then
+            echo "No new observations to commit."
+          else
+            git commit -m "chore: update price history [skip ci]"
+            git push
+          fi
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - id: deploy
+        uses: actions/deploy-pages@v4

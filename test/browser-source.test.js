@@ -14,16 +14,25 @@ import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 
-let havePlaywright = true;
+/**
+ * Needs both the package *and* a browser binary — `npm i playwright` without
+ * `npx playwright install chromium` is a common half-installed state, and it
+ * should skip these rather than fail with a confusing launch error.
+ */
+let skipReason = false;
 try {
-  await import('playwright');
+  const { chromium } = await import('playwright');
+  const executable = process.env.PLAYWRIGHT_CHROMIUM_PATH || chromium.executablePath();
+  if (!fs.existsSync(executable)) {
+    skipReason = 'no chromium binary (npx playwright install chromium)';
+  }
 } catch {
-  havePlaywright = false;
+  skipReason = 'playwright not installed (npm i playwright)';
 }
 
 test(
   'browser source reads a client-rendered price',
-  { skip: havePlaywright ? false : 'playwright not installed (npm i playwright)' },
+  { skip: skipReason },
   async () => {
     const html = fs.readFileSync(path.join(HERE, 'fixtures/product.html'), 'utf8');
 
@@ -74,7 +83,7 @@ test(
 
 test(
   'browser source refuses a URL robots.txt disallows',
-  { skip: havePlaywright ? false : 'playwright not installed (npm i playwright)' },
+  { skip: skipReason },
   async () => {
     const server = http.createServer((req, res) => {
       if (req.url === '/robots.txt') {
