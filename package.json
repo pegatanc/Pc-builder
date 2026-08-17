@@ -15,7 +15,8 @@
     "test": "node --test test/*.test.js",
     "site": "node src/export-static.js",
     "history:import": "node --import ./src/lib/fatal.js src/history.js import",
-    "history:export": "node --import ./src/lib/fatal.js src/history.js export"
+    "history:export": "node --import ./src/lib/fatal.js src/history.js export",
+    "price": "node src/set-price.js"
   },
   "dependencies": {
     "better-sqlite3": "^11.5.0",

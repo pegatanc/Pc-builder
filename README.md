@@ -29,6 +29,7 @@ Other commands:
 npm run sources   # which price sources are configured, and what each one needs
 npm run fetch     # fetch prices once and exit
 npm run seed      # re-sync config/parts.json into the database
+npm run price     # list manual prices; `npm run price cpu 148.99` sets one
 npm run site      # build the static site into ./site (see GitHub Pages below)
 npm test          # robots.txt precedence, price parsing, history round-trip
 ```
@@ -104,6 +105,19 @@ honest ways to get its prices, in descending order of convenience:
 
    Unlike `.env`, this file **is** committed — the Pages workflow runs on a fresh
    checkout and can only see prices that are in the repo. It holds prices, not secrets.
+
+   You don't have to edit the JSON by hand:
+
+   ```bash
+   npm run price                  # what's filled in, what isn't
+   npm run price cpu 148.99       # any unambiguous fragment of the id or name
+   npm run price gpu '$1,234.56'  # pasted currency strings are fine
+   npm run price cpu clear        # back to null
+   ```
+
+   It refuses an ambiguous fragment rather than guessing, and stamps `observedAt`
+   with the date. (`clear` is a bare word because `npm run` swallows `--clear`
+   before it reaches the script.)
 
 #### Why not just render the page in a browser?
 
@@ -296,6 +310,17 @@ to any part if you want it back. If you switch `amazonDomain`, remember to updat
 | CPU Cooler     | Cooler Master Hyper 212 Black (`B07H25DYM3`)   | $35    |
 | Case           | NZXT H6 Flow (`B0C89FCDFP`)                    | $95    |
 | Case Fan       | Arctic P12 (`B07GB16RK7`)                      | $8     |
+
+## Reading the table
+
+- **90-day history** — hover any sparkline for the exact price and date on that day.
+  The build total card carries its own trend line, so you can see whether the build
+  as a whole is getting cheaper.
+- **Lowest seen** — the cheapest that part has been in the tracked window, with how
+  far above it the current price sits. A part matching its own record gets a
+  `★ lowest yet` badge; the footer shows the cheapest the whole build has ever been.
+- **Status** — `▼ n% drop` when the alert rule fires, `at target` when at or below
+  the configured target, `stale` when the last observation is over a week old.
 
 ## How alerting works
 

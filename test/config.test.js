@@ -147,3 +147,60 @@ test('the shipped template covers every seeded part, with a link each', () => {
     assert.ok(row.url?.startsWith('https://'), `${row.partId} needs a link`);
   }
 });
+
+/** `npm run price` — manual entry without hand-editing JSON. */
+test('the price CLI resolves a part by unambiguous fragment and writes it', () => {
+  const { status, output } = inSandbox(() => {}, ['src/set-price.js', 'cpu', '148.99']);
+  assert.equal(status, 0, output);
+  assert.match(output, /cpu-ryzen-7-5700x: — → \$148\.99/);
+});
+
+test('the price CLI accepts a pasted currency string', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pc-price-'));
+  const configDir = path.join(dir, 'config');
+  fs.cpSync(path.join(ROOT, 'config'), configDir, { recursive: true });
+
+  const run = spawnSync(process.execPath, ['src/set-price.js', 'gpu', '$1,234.56'], {
+    cwd: ROOT,
+    encoding: 'utf8',
+    env: { ...process.env, DATA_DIR: path.join(dir, 'data'), CONFIG_DIR: configDir },
+  });
+
+  assert.equal(run.status, 0, run.stderr);
+  const written = JSON.parse(fs.readFileSync(path.join(configDir, 'manual-prices.json'), 'utf8'));
+  assert.equal(written.prices.find((p) => p.partId === 'gpu-asrock-rx-7900-xt').price, 1234.56);
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+test('the price CLI refuses an ambiguous fragment rather than guessing', () => {
+  const { status, output } = inSandbox(() => {}, ['src/set-price.js', 'a', '10']);
+  assert.equal(status, 1);
+  assert.match(output, /ambiguous/);
+});
+
+test('the price CLI clears with a bare word, since npm swallows --clear', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pc-price-'));
+  const configDir = path.join(dir, 'config');
+  fs.cpSync(path.join(ROOT, 'config'), configDir, { recursive: true });
+  const env = { ...process.env, DATA_DIR: path.join(dir, 'data'), CONFIG_DIR: configDir };
+  const file = path.join(configDir, 'manual-prices.json');
+
+  spawnSync(process.execPath, ['src/set-price.js', 'fan', '9.99'], { cwd: ROOT, env });
+  assert.equal(
+    JSON.parse(fs.readFileSync(file, 'utf8')).prices.find((p) => p.partId === 'fan-arctic-p12').price,
+    9.99
+  );
+
+  spawnSync(process.execPath, ['src/set-price.js', 'fan', 'clear'], { cwd: ROOT, env });
+  assert.equal(
+    JSON.parse(fs.readFileSync(file, 'utf8')).prices.find((p) => p.partId === 'fan-arctic-p12').price,
+    null
+  );
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+test('the price CLI rejects a nonsense amount', () => {
+  const { status, output } = inSandbox(() => {}, ['src/set-price.js', 'cpu', 'free']);
+  assert.equal(status, 1);
+  assert.match(output, /not a valid price/);
+});

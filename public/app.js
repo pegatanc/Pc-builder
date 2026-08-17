@@ -25,7 +25,7 @@ function pill(text, kind) {
  * Plain canvas sparkline: filled area, line, and a dot on the latest point.
  * Coloured green when the series ends below its own average, red above.
  */
-function drawSparkline(canvas, series, { alert = false } = {}) {
+function drawSparkline(canvas, series, { alert = false, highlight = null, accent = null } = {}) {
   const dpr = window.devicePixelRatio || 1;
   const width = canvas.clientWidth || 170;
   const height = canvas.clientHeight || 34;
@@ -51,7 +51,7 @@ function drawSparkline(canvas, series, { alert = false } = {}) {
 
   const last = values[values.length - 1];
   const mean = values.reduce((a, b) => a + b, 0) / values.length;
-  const stroke = alert ? '#ff8a5c' : last <= mean ? '#45c17a' : '#ef6b6b';
+  const stroke = accent || (alert ? '#ff8a5c' : last <= mean ? '#45c17a' : '#ef6b6b');
 
   // Filled area under the line.
   const gradient = ctx.createLinearGradient(0, 0, 0, height);
@@ -81,6 +81,99 @@ function drawSparkline(canvas, series, { alert = false } = {}) {
   ctx.arc(x(values.length - 1), y(last), 2.4, 0, Math.PI * 2);
   ctx.fillStyle = stroke;
   ctx.fill();
+
+  // Hovered point: vertical crosshair plus a ringed marker.
+  if (highlight != null && highlight >= 0 && highlight < values.length) {
+    const hx = x(highlight);
+    const hy = y(values[highlight]);
+
+    ctx.beginPath();
+    ctx.moveTo(hx, 0);
+    ctx.lineTo(hx, height);
+    ctx.strokeStyle = 'rgba(230, 233, 239, 0.28)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(hx, hy, 3.2, 0, Math.PI * 2);
+    ctx.fillStyle = '#e6e9ef';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(hx, hy, 3.2, 0, Math.PI * 2);
+    ctx.strokeStyle = stroke;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+}
+
+/* ---------- sparkline tooltip ---------- */
+
+let tooltipEl = null;
+
+function tooltip() {
+  if (!tooltipEl) {
+    tooltipEl = el('div', 'spark-tip');
+    tooltipEl.hidden = true;
+    document.body.append(tooltipEl);
+  }
+  return tooltipEl;
+}
+
+/**
+ * Makes a sparkline readable: hovering snaps to the nearest day and reports the
+ * exact date and price. Without this the chart shows a shape but no numbers.
+ */
+function attachSparklineTooltip(canvas, series, options) {
+  const indexAt = (event) => {
+    const rect = canvas.getBoundingClientRect();
+    const ratio = (event.clientX - rect.left) / rect.width;
+    return Math.max(0, Math.min(series.length - 1, Math.round(ratio * (series.length - 1))));
+  };
+
+  const show = (event) => {
+    const index = indexAt(event);
+    const point = series[index];
+    if (!point) return;
+
+    drawSparkline(canvas, series, { ...options, highlight: index });
+
+    const tip = tooltip();
+    tip.hidden = false;
+    tip.replaceChildren(
+      el('span', 'spark-tip-price', money(point.price, options.currency)),
+      el('span', 'spark-tip-day', formatDay(point.day))
+    );
+
+    // Clamp to the viewport so the tip never hangs off the right edge.
+    const rect = canvas.getBoundingClientRect();
+    const width = tip.offsetWidth || 90;
+    const left = Math.min(window.innerWidth - width - 8, Math.max(8, event.clientX - width / 2));
+    tip.style.left = `${left}px`;
+    tip.style.top = `${rect.top + window.scrollY - tip.offsetHeight - 8}px`;
+  };
+
+  const hide = () => {
+    tooltip().hidden = true;
+    drawSparkline(canvas, series, { ...options, highlight: null });
+  };
+
+  canvas.addEventListener('mousemove', show);
+  canvas.addEventListener('mouseleave', hide);
+}
+
+function formatDay(day) {
+  const date = new Date(`${day}T12:00:00Z`);
+  return Number.isNaN(date.getTime())
+    ? day
+    : date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+/** Table cells are narrow and the window is 90 days, so the year is noise. */
+function formatDayShort(day) {
+  const date = new Date(`${day}T12:00:00Z`);
+  return Number.isNaN(date.getTime())
+    ? day
+    : date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
 /* ---------- rendering ---------- */
@@ -97,7 +190,11 @@ function renderSummary(data) {
     {
       label: 'Build total',
       value: money(summary.total, currency),
-      hint: `${summary.pricedParts} of ${summary.totalParts} parts priced`,
+      hint:
+        summary.totalLow != null
+          ? `Lowest ${money(summary.totalLow, currency)} on ${formatDay(summary.totalLowDay)}`
+          : `${summary.pricedParts} of ${summary.totalParts} parts priced`,
+      trend: true,
     },
     {
       label: 'vs baseline',
@@ -127,6 +224,23 @@ function renderSummary(data) {
     if (card.valueClass === 'up') value.style.color = 'var(--bad)';
     if (card.valueClass === 'down') value.style.color = 'var(--good)';
     node.append(value, el('div', 'hint', card.hint));
+
+    // The build total carries its own trend line: is this build getting cheaper?
+    if (card.trend && data.totalSeries?.length >= 2) {
+      const canvas = el('canvas', 'spark spark-wide');
+      canvas.setAttribute(
+        'aria-label',
+        `Build total over ${data.totalSeries.length} days, low ` +
+          `${money(summary.totalLow, currency)} on ${formatDay(summary.totalLowDay)}`
+      );
+      node.append(canvas);
+      const options = { currency, accent: '#5aa9ff' };
+      requestAnimationFrame(() => {
+        drawSparkline(canvas, data.totalSeries, options);
+        attachSparklineTooltip(canvas, data.totalSeries, options);
+      });
+    }
+
     container.append(node);
   }
 }
@@ -179,10 +293,23 @@ function renderPartRow(item, currency) {
   if (item.series.length >= 2) {
     const wrap = el('div', 'spark-wrap');
     const canvas = el('canvas', 'spark');
-    canvas.setAttribute('aria-label', `${item.name} price history`);
+    const first = item.series[0];
+    const last = item.series[item.series.length - 1];
+    canvas.setAttribute(
+      'aria-label',
+      `${item.name} price history, ${item.series.length} days from ` +
+        `${money(first.price, currency)} on ${formatDay(first.day)} to ` +
+        `${money(last.price, currency)} on ${formatDay(last.day)}. ` +
+        `Lowest ${money(item.stats.low, currency)}, highest ${money(item.stats.high, currency)}.`
+    );
     wrap.append(canvas);
     sparkCell.append(wrap);
-    requestAnimationFrame(() => drawSparkline(canvas, item.series, { alert: item.flags.drop }));
+
+    const options = { alert: item.flags.drop, currency };
+    requestAnimationFrame(() => {
+      drawSparkline(canvas, item.series, options);
+      attachSparklineTooltip(canvas, item.series, options);
+    });
   } else {
     sparkCell.append(el('span', 'spark-empty', 'not enough history'));
   }
@@ -199,6 +326,20 @@ function renderPartRow(item, currency) {
   }
   row.append(avgCell);
 
+  // Lowest seen — the "is this a good price?" column.
+  const lowCell = el('td', 'num');
+  lowCell.append(el('span', null, money(item.stats.low, currency)));
+  if (item.stats.lowDay) {
+    lowCell.append(
+      el(
+        'span',
+        'delta',
+        item.flags.atLowest ? 'today' : `+${item.stats.aboveLowPercent}% · ${formatDayShort(item.stats.lowDay)}`
+      )
+    );
+  }
+  row.append(lowCell);
+
   // Target
   row.append(el('td', 'num', money(item.target, currency)));
 
@@ -206,6 +347,7 @@ function renderPartRow(item, currency) {
   const statusCell = el('td');
   const stack = el('div', 'status-stack');
   if (item.flags.drop) stack.append(pill(`▼ ${item.stats.dropPercent}% drop`, 'pill-alert'));
+  if (item.flags.atLowest) stack.append(pill('★ lowest yet', 'pill-low'));
   if (item.flags.atOrBelowTarget) stack.append(pill('at target', 'pill-good'));
   if (item.flags.stale) stack.append(pill('stale', 'pill-warn'));
   if (item.flags.noPrice) stack.append(pill('unpriced', 'pill-muted'));
@@ -223,7 +365,7 @@ function renderTable(data) {
 
   if (!data.items.length) {
     const cell = el('td', 'empty', 'No parts seeded yet.');
-    cell.colSpan = 7;
+    cell.colSpan = 8;
     const row = el('tr');
     row.append(cell);
     body.append(row);
@@ -246,6 +388,7 @@ function renderTable(data) {
   const spacer = el('td');
   spacer.colSpan = 3;
   totalRow.append(spacer);
+  totalRow.append(el('td', 'num', money(summary.totalLow, currency)));
   totalRow.append(el('td', 'num', money(summary.targetTotal, currency)));
   totalRow.append(el('td', null, `${summary.alerts} alert${summary.alerts === 1 ? '' : 's'}`));
 
@@ -361,7 +504,7 @@ window.addEventListener('resize', () => {
 load().catch((err) => {
   // textContent, not innerHTML: the message can carry markup from a failed response.
   const cell = el('td', 'empty', `Failed to load: ${err.message}`);
-  cell.colSpan = 7;
+  cell.colSpan = 8;
   const row = el('tr');
   row.append(cell);
   document.getElementById('parts-body').replaceChildren(row);
