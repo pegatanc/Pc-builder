@@ -1636,3 +1636,21 @@
 {"part_id":"ram-ddr4-3600-cl16-32gb","retailer":"Best Buy","source":"sample","price_cents":7755,"currency":"USD","in_stock":1,"url":null,"observed_at":"2026-08-17T17:42:33.167Z"}
 {"part_id":"ssd-sk-hynix-p41-1tb","retailer":"Amazon","source":"sample","price_cents":9153,"currency":"USD","in_stock":1,"url":null,"observed_at":"2026-08-17T17:42:33.167Z"}
 {"part_id":"ssd-sk-hynix-p41-1tb","retailer":"Best Buy","source":"sample","price_cents":9079,"currency":"USD","in_stock":1,"url":null,"observed_at":"2026-08-17T17:42:33.167Z"}
+{"part_id":"case-nzxt-h6-flow","retailer":"Amazon","source":"sample","price_cents":11834,"currency":"USD","in_stock":1,"url":"https://www.amazon.com/dp/B0C89FCDFP","observed_at":"2026-08-17T18:16:32.984Z"}
+{"part_id":"case-nzxt-h6-flow","retailer":"Best Buy","source":"sample","price_cents":11177,"currency":"USD","in_stock":1,"url":null,"observed_at":"2026-08-17T18:16:32.984Z"}
+{"part_id":"cooler-hyper-212-black","retailer":"Amazon","source":"sample","price_cents":3858,"currency":"USD","in_stock":1,"url":"https://www.amazon.com/dp/B07H25DYM3","observed_at":"2026-08-17T18:16:32.984Z"}
+{"part_id":"cooler-hyper-212-black","retailer":"Best Buy","source":"sample","price_cents":3780,"currency":"USD","in_stock":1,"url":null,"observed_at":"2026-08-17T18:16:32.984Z"}
+{"part_id":"cpu-ryzen-7-5700x","retailer":"Amazon","source":"sample","price_cents":14764,"currency":"USD","in_stock":1,"url":"https://www.amazon.com/dp/B09VCHQHZ6","observed_at":"2026-08-17T18:16:32.984Z"}
+{"part_id":"cpu-ryzen-7-5700x","retailer":"Best Buy","source":"sample","price_cents":16794,"currency":"USD","in_stock":1,"url":null,"observed_at":"2026-08-17T18:16:32.984Z"}
+{"part_id":"fan-arctic-p12","retailer":"Amazon","source":"sample","price_cents":912,"currency":"USD","in_stock":1,"url":"https://www.amazon.com/dp/B07GB16RK7","observed_at":"2026-08-17T18:16:32.984Z"}
+{"part_id":"fan-arctic-p12","retailer":"Best Buy","source":"sample","price_cents":886,"currency":"USD","in_stock":1,"url":null,"observed_at":"2026-08-17T18:16:32.984Z"}
+{"part_id":"gpu-asrock-rx-7900-xt","retailer":"Amazon","source":"sample","price_cents":62302,"currency":"USD","in_stock":1,"url":"https://www.amazon.com/dp/B0BRYWWDH2","observed_at":"2026-08-17T18:16:32.984Z"}
+{"part_id":"gpu-asrock-rx-7900-xt","retailer":"Best Buy","source":"sample","price_cents":61532,"currency":"USD","in_stock":1,"url":null,"observed_at":"2026-08-17T18:16:32.984Z"}
+{"part_id":"mobo-msi-b550-tomahawk","retailer":"Amazon","source":"sample","price_cents":16777,"currency":"USD","in_stock":1,"url":"https://www.amazon.com/dp/B089CWDHFZ","observed_at":"2026-08-17T18:16:32.984Z"}
+{"part_id":"mobo-msi-b550-tomahawk","retailer":"Best Buy","source":"sample","price_cents":16500,"currency":"USD","in_stock":1,"url":null,"observed_at":"2026-08-17T18:16:32.984Z"}
+{"part_id":"psu-750w-gold-modular","retailer":"Amazon","source":"sample","price_cents":10599,"currency":"USD","in_stock":1,"url":null,"observed_at":"2026-08-17T18:16:32.984Z"}
+{"part_id":"psu-750w-gold-modular","retailer":"Best Buy","source":"sample","price_cents":10549,"currency":"USD","in_stock":1,"url":null,"observed_at":"2026-08-17T18:16:32.984Z"}
+{"part_id":"ram-ddr4-3600-cl16-32gb","retailer":"Amazon","source":"sample","price_cents":5575,"currency":"USD","in_stock":1,"url":null,"observed_at":"2026-08-17T18:16:32.984Z"}
+{"part_id":"ram-ddr4-3600-cl16-32gb","retailer":"Best Buy","source":"sample","price_cents":7755,"currency":"USD","in_stock":1,"url":null,"observed_at":"2026-08-17T18:16:32.984Z"}
+{"part_id":"ssd-sk-hynix-p41-1tb","retailer":"Amazon","source":"sample","price_cents":9153,"currency":"USD","in_stock":1,"url":null,"observed_at":"2026-08-17T18:16:32.984Z"}
+{"part_id":"ssd-sk-hynix-p41-1tb","retailer":"Best Buy","source":"sample","price_cents":9079,"currency":"USD","in_stock":1,"url":null,"observed_at":"2026-08-17T18:16:32.984Z"}
