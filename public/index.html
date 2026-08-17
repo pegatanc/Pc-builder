@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PC Build Price Tracker</title>
+    <!-- Relative, not absolute: a GitHub project site is served from /<repo>/ -->
+    <link rel="stylesheet" href="./styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🖥️</text></svg>"
+    />
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <h1>PC Build Price Tracker</h1>
+        <p class="sub" id="subtitle">Loading…</p>
+      </div>
+      <div class="actions">
+        <span id="source-badge" class="pill pill-muted" hidden></span>
+        <span id="static-note" class="static-note" hidden></span>
+        <button id="refresh" type="button">Refresh prices</button>
+      </div>
+    </header>
+
+    <section class="cards" id="summary"></section>
+
+    <main>
+      <table id="parts-table">
+        <thead>
+          <tr>
+            <th class="col-part">Part</th>
+            <th class="num">Cheapest</th>
+            <th>Retailer</th>
+            <th class="col-spark">90-day history</th>
+            <th class="num">30-day avg</th>
+            <th class="num">Target</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="parts-body">
+          <tr>
+            <td colspan="7" class="empty">Loading parts…</td>
+          </tr>
+        </tbody>
+        <tfoot id="parts-foot"></tfoot>
+      </table>
+    </main>
+
+    <footer class="foot">
+      <span id="last-run"></span>
+      <span id="alert-rule"></span>
+    </footer>
+
+    <!-- `npm run site` rewrites this to 'static' when building for GitHub Pages,
+         so the page knows there is no API behind it and never probes for one. -->
+    <script>
+      window.__TRACKER_MODE__ = 'server';
+    </script>
+    <script src="./app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Arctic P12 120mm Case Fan — Example Retailer</title>
+    <meta property="product:price:amount" content="9.49" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        "name": "Arctic P12 120mm Case Fan",
+        "sku": "ACFAN00118A",
+        "offers": {
+          "@type": "Offer",
+          "price": "8.99",
+          "priceCurrency": "USD",
+          "availability": "https://schema.org/InStock"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <h1>Arctic P12 120mm Case Fan</h1>
+
+    <!-- Price injected client-side, which is exactly the case a plain fetch misses. -->
+    <div class="product-price" data-testid="price"></div>
+
+    <div class="accessory">
+      <span class="price">$24.99</span>
+      <span>Optional fan controller</span>
+    </div>
+
+    <script>
+      document.querySelector('.product-price').textContent = '$8.99';
+    </script>
+  </body>
+</html>

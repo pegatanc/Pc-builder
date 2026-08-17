@@ -1,0 +1,145 @@
+{
+  "$comment": [
+    "Seed catalog. `npm run seed` upserts this into SQLite (safe to re-run).",
+    "A part can have several listings; the tracker records a price per (part, retailer)",
+    "and shows the cheapest one. ASINs are only filled in where they were supplied —",
+    "no ASIN is guessed. Listings without an ASIN are matched by `query` on sources that",
+    "support search (Best Buy). `url` is informational unless `allowHtml` is true, which",
+    "opts that single listing into the robots.txt-checked HTML source."
+  ],
+
+  "parts": [
+    {
+      "id": "cpu-ryzen-7-5700x",
+      "name": "AMD Ryzen 7 5700X",
+      "category": "CPU",
+      "brand": "AMD",
+      "model": "100-100000926WOF",
+      "spec": "8C/16T, Zen 3, AM4, 65W",
+      "listings": [
+        {
+          "retailer": "Amazon",
+          "asin": "B09VCHQHZ6",
+          "url": "https://www.amazon.com/dp/B09VCHQHZ6"
+        },
+        { "retailer": "Best Buy", "query": "AMD Ryzen 7 5700X" }
+      ]
+    },
+    {
+      "id": "mobo-msi-b550-tomahawk",
+      "name": "MSI MAG B550 Tomahawk",
+      "category": "Motherboard",
+      "brand": "MSI",
+      "model": "MAG B550 TOMAHAWK",
+      "spec": "ATX, AM4, PCIe 4.0, 2.5GbE",
+      "listings": [
+        {
+          "retailer": "Amazon",
+          "asin": "B089CWDHFZ",
+          "url": "https://www.amazon.com/dp/B089CWDHFZ"
+        },
+        { "retailer": "Best Buy", "query": "MSI MAG B550 Tomahawk" }
+      ]
+    },
+    {
+      "id": "ram-ddr4-3600-cl16-32gb",
+      "name": "G.Skill Ripjaws V 32GB (2x16GB) DDR4-3600 CL16",
+      "category": "Memory",
+      "brand": "G.Skill",
+      "model": "F4-3600C16D-32GVKC",
+      "spec": "2x16GB, DDR4-3600, CL16-19-19-39, 1.35V",
+      "listings": [
+        { "retailer": "Amazon", "query": "G.Skill Ripjaws V 32GB 2x16GB DDR4-3600 CL16" },
+        { "retailer": "Best Buy", "query": "32GB DDR4-3600 CL16 desktop memory kit" }
+      ]
+    },
+    {
+      "id": "ssd-sk-hynix-p41-1tb",
+      "name": "SK hynix Platinum P41 1TB",
+      "category": "Storage",
+      "brand": "SK hynix",
+      "model": "SHPP41-1000GM",
+      "spec": "M.2 2280 NVMe PCIe 4.0, 7000/6500 MB/s",
+      "listings": [
+        { "retailer": "Amazon", "query": "SK hynix Platinum P41 1TB NVMe SSD" },
+        { "retailer": "Best Buy", "query": "SK hynix Platinum P41 1TB" }
+      ]
+    },
+    {
+      "id": "psu-750w-gold-modular",
+      "name": "750W 80+ Gold Fully Modular PSU",
+      "category": "Power Supply",
+      "brand": "Any",
+      "model": "EVGA SuperNOVA 750 GT / MSI MAG A750GL / Corsair RM750e",
+      "spec": "750W, 80+ Gold, fully modular, ATX 3.x preferred",
+      "listings": [
+        { "retailer": "Amazon", "query": "750W 80+ Gold fully modular power supply" },
+        { "retailer": "Best Buy", "query": "750 watt 80 plus gold fully modular power supply" }
+      ]
+    },
+    {
+      "id": "gpu-asrock-rx-7900-xt",
+      "name": "ASRock Radeon RX 7900 XT 20GB",
+      "category": "Graphics Card",
+      "brand": "ASRock",
+      "model": "RX 7900 XT Phantom Gaming",
+      "spec": "20GB GDDR6, 320-bit",
+      "listings": [
+        {
+          "retailer": "Amazon",
+          "asin": "B0BRYWWDH2",
+          "url": "https://www.amazon.com/dp/B0BRYWWDH2"
+        },
+        { "retailer": "Best Buy", "query": "Radeon RX 7900 XT 20GB" }
+      ]
+    },
+    {
+      "id": "cooler-hyper-212-black",
+      "name": "Cooler Master Hyper 212 Black",
+      "category": "CPU Cooler",
+      "brand": "Cooler Master",
+      "model": "RR-212S-20PK-R2",
+      "spec": "120mm tower air cooler, AM4/AM5/LGA1700",
+      "listings": [
+        {
+          "retailer": "Amazon",
+          "asin": "B07H25DYM3",
+          "url": "https://www.amazon.com/dp/B07H25DYM3"
+        },
+        { "retailer": "Best Buy", "query": "Cooler Master Hyper 212 Black" }
+      ]
+    },
+    {
+      "id": "case-nzxt-h6-flow",
+      "name": "NZXT H6 Flow",
+      "category": "Case",
+      "brand": "NZXT",
+      "model": "CC-H61FB-01",
+      "spec": "Mid tower ATX, dual-chamber, 3x120mm included",
+      "listings": [
+        {
+          "retailer": "Amazon",
+          "asin": "B0C89FCDFP",
+          "url": "https://www.amazon.com/dp/B0C89FCDFP"
+        },
+        { "retailer": "Best Buy", "query": "NZXT H6 Flow" }
+      ]
+    },
+    {
+      "id": "fan-arctic-p12",
+      "name": "Arctic P12 120mm Case Fan",
+      "category": "Cooling",
+      "brand": "Arctic",
+      "model": "ACFAN00118A",
+      "spec": "120mm pressure-optimised, PWM PST",
+      "listings": [
+        {
+          "retailer": "Amazon",
+          "asin": "B07GB16RK7",
+          "url": "https://www.amazon.com/dp/B07GB16RK7"
+        },
+        { "retailer": "Best Buy", "query": "Arctic P12 120mm case fan" }
+      ]
+    }
+  ]
+}

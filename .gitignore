@@ -1,0 +1,15 @@
+node_modules/
+site/
+
+# The database itself is disposable, but the NDJSON history is the record the
+# Pages workflow carries between runs — keep that one file tracked.
+data/*
+!data/price-history.ndjson
+
+*.db
+*.db-shm
+*.db-wal
+.env
+config/manual-prices.json
+.DS_Store
+npm-debug.log*

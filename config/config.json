@@ -1,0 +1,50 @@
+{
+  "$comment": "Tracker configuration. Target prices live under `targets` (keyed by part id from parts.json).",
+
+  "currency": "USD",
+
+  "baselineTotal": 1315.00,
+
+  "schedule": {
+    "cron": "0 */12 * * *",
+    "timezone": "America/New_York",
+    "runOnStart": true
+  },
+
+  "alerts": {
+    "dropPercent": 10,
+    "windowDays": 30,
+    "minSamples": 3
+  },
+
+  "sources": {
+    "order": ["paapi", "keepa", "bestbuy", "jsonld", "browser", "manual", "sample"],
+    "enabled": {
+      "paapi": true,
+      "keepa": true,
+      "bestbuy": true,
+      "jsonld": false,
+      "browser": false,
+      "manual": true,
+      "sample": true
+    },
+    "http": {
+      "userAgent": "pc-builder-price-tracker/1.0 (self-hosted; +http://localhost)",
+      "minDelayMsPerHost": 5000,
+      "timeoutMs": 15000,
+      "maxRetries": 2
+    }
+  },
+
+  "targets": {
+    "cpu-ryzen-7-5700x": 150.00,
+    "mobo-msi-b550-tomahawk": 160.00,
+    "ram-ddr4-3600-cl16-32gb": 75.00,
+    "ssd-sk-hynix-p41-1tb": 80.00,
+    "psu-750w-gold-modular": 90.00,
+    "gpu-asrock-rx-7900-xt": 620.00,
+    "cooler-hyper-212-black": 35.00,
+    "case-nzxt-h6-flow": 95.00,
+    "fan-arctic-p12": 8.00
+  }
+}

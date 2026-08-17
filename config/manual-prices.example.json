@@ -1,0 +1,25 @@
+{
+  "$comment": [
+    "Copy to config/manual-prices.json to use the `manual` source.",
+    "This is the zero-API-key way to track real Amazon prices: check the page",
+    "yourself, paste the number, and the tracker handles history and alerts.",
+    "`observedAt` is optional and defaults to now — set it to backfill a price",
+    "you noted on an earlier date."
+  ],
+  "prices": [
+    {
+      "partId": "cpu-ryzen-7-5700x",
+      "retailer": "Amazon",
+      "price": 148.99,
+      "url": "https://www.amazon.com/dp/B09VCHQHZ6",
+      "inStock": true,
+      "observedAt": "2026-08-15"
+    },
+    {
+      "partId": "gpu-asrock-rx-7900-xt",
+      "retailer": "Amazon",
+      "price": 629.99,
+      "url": "https://www.amazon.com/dp/B0BRYWWDH2"
+    }
+  ]
+}
