@@ -1,3 +1,4 @@
+import './lib/fatal.js';
 import path from 'node:path';
 import express from 'express';
 import { ROOT, config } from './config.js';

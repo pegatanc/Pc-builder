@@ -359,9 +359,10 @@ window.addEventListener('resize', () => {
 });
 
 load().catch((err) => {
-  document.getElementById('parts-body').replaceChildren(
-    Object.assign(el('tr'), {
-      innerHTML: `<td colspan="7" class="empty">Failed to load: ${err.message}</td>`,
-    })
-  );
+  // textContent, not innerHTML: the message can carry markup from a failed response.
+  const cell = el('td', 'empty', `Failed to load: ${err.message}`);
+  cell.colSpan = 7;
+  const row = el('tr');
+  row.append(cell);
+  document.getElementById('parts-body').replaceChildren(row);
 });

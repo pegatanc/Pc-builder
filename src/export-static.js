@@ -5,6 +5,7 @@
  * unchanged in both modes: it tries the API first and falls back to these files
  * when there's no server behind it.
  */
+import './lib/fatal.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import { ROOT, config } from './config.js';

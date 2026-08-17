@@ -2,6 +2,7 @@
  * One-off CLI: `npm run fetch` to fetch now, `npm run sources` to see which
  * price sources are wired up.
  */
+import './lib/fatal.js';
 import { seed } from './seed.js';
 import { runFetch, backfillIfEmpty, purgeSyntheticHistory } from './fetcher.js';
 import { describeSources } from './sources/index.js';

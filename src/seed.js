@@ -1,5 +1,49 @@
 import { db } from './db.js';
-import { loadParts } from './config.js';
+import { loadParts, ConfigError } from './config.js';
+
+/**
+ * Catches config mistakes here, where we can name the offending entry, rather
+ * than letting them surface as an opaque NOT NULL / UNIQUE constraint error.
+ */
+function validate(parts) {
+  const problems = [];
+  const seen = new Set();
+
+  parts.forEach((part, i) => {
+    const label = part?.id ? `part "${part.id}"` : `parts[${i}]`;
+
+    for (const field of ['id', 'name', 'category']) {
+      if (!part?.[field]) problems.push(`${label}: missing "${field}"`);
+    }
+
+    if (part?.id) {
+      if (seen.has(part.id)) problems.push(`${label}: duplicate id`);
+      seen.add(part.id);
+    }
+
+    const listings = part?.listings;
+    if (listings && !Array.isArray(listings)) {
+      problems.push(`${label}: "listings" must be an array`);
+      return;
+    }
+
+    const retailers = new Set();
+    (listings || []).forEach((listing, j) => {
+      if (!listing?.retailer) {
+        problems.push(`${label}: listings[${j}] is missing "retailer"`);
+        return;
+      }
+      if (retailers.has(listing.retailer)) {
+        problems.push(`${label}: duplicate listing for retailer "${listing.retailer}"`);
+      }
+      retailers.add(listing.retailer);
+    });
+  });
+
+  if (problems.length) {
+    throw new ConfigError(`config/parts.json is invalid:\n  - ${problems.join('\n  - ')}`);
+  }
+}
 
 const upsertPart = db.prepare(`
   INSERT INTO parts (id, name, category, brand, model, spec, sort_order)
@@ -26,6 +70,7 @@ const upsertListing = db.prepare(`
 
 export function seed({ log = console.log } = {}) {
   const parts = loadParts();
+  validate(parts);
   let listingCount = 0;
 
   const run = db.transaction(() => {
