@@ -92,3 +92,58 @@ test('the seeded config is valid', () => {
   assert.equal(status, 0, output);
   assert.match(output, /Seeded 9 parts/);
 });
+
+/**
+ * The manual-prices template ships blank and committed. It must behave as a
+ * no-op until a real price is entered — activating it early would stand `sample`
+ * down, purge the synthetic history, and leave every part unpriced.
+ */
+test('a blank manual-prices template does not activate the manual source', () => {
+  const { status, output } = inSandbox(() => {}, ['src/fetch-once.js', '--list']);
+  assert.equal(status, 0);
+  assert.match(output, /manual\s+not configured/);
+  assert.match(output, /sample\s+ACTIVE/);
+});
+
+test('filling one price activates manual and stands sample down', () => {
+  const { status, output } = inSandbox((dir) => {
+    const file = path.join(dir, 'manual-prices.json');
+    const parsed = JSON.parse(fs.readFileSync(file, 'utf8'));
+    parsed.prices.find((p) => p.partId === 'cpu-ryzen-7-5700x').price = 199.99;
+    fs.writeFileSync(file, JSON.stringify(parsed));
+  }, ['src/fetch-once.js', '--list']);
+
+  assert.equal(status, 0);
+  assert.match(output, /manual\s+ACTIVE/);
+  assert.match(output, /sample\s+standby/);
+});
+
+test('unfilled rows are skipped quietly, not reported as errors', () => {
+  const { status, output } = inSandbox((dir) => {
+    const file = path.join(dir, 'manual-prices.json');
+    const parsed = JSON.parse(fs.readFileSync(file, 'utf8'));
+    parsed.prices.find((p) => p.partId === 'fan-arctic-p12').price = 8.99;
+    fs.writeFileSync(file, JSON.stringify(parsed));
+  }, ['src/fetch-once.js']);
+
+  assert.equal(status, 0);
+  assert.match(output, /manual: 1 price/);
+  assert.doesNotMatch(output, /bad price/, 'null rows must not be reported as bad');
+});
+
+test('the shipped template covers every seeded part, with a link each', () => {
+  const template = JSON.parse(
+    fs.readFileSync(path.join(ROOT, 'config/manual-prices.json'), 'utf8')
+  );
+  const parts = JSON.parse(fs.readFileSync(path.join(ROOT, 'config/parts.json'), 'utf8')).parts;
+
+  assert.equal(template.prices.length, parts.length);
+  assert.deepEqual(
+    template.prices.map((p) => p.partId).sort(),
+    parts.map((p) => p.id).sort()
+  );
+  for (const row of template.prices) {
+    assert.equal(row.price, null, `${row.partId} must ship blank`);
+    assert.ok(row.url?.startsWith('https://'), `${row.partId} needs a link`);
+  }
+});

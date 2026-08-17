@@ -1,0 +1,84 @@
+{
+  "$comment": [
+    "Real prices, entered by hand. This is the zero-cost way to get actual Amazon",
+    "numbers: open each url below, read the price, put it in \"price\".",
+    "",
+    "Leave a price as null and that row is skipped. The manual source only",
+    "activates once at least one real price is filled in — until then the site",
+    "keeps showing sample data.",
+    "",
+    "IMPORTANT: the first real price purges the 90 days of synthetic history, by",
+    "design, so demo numbers cannot skew your 30-day averages and drop alerts.",
+    "Sparklines then rebuild from that day forward. Fill in all nine at once for",
+    "a complete build total.",
+    "",
+    "This file IS committed — the Pages workflow runs on a fresh checkout and",
+    "needs it in the repo. Update the prices whenever you recheck, and set",
+    "observedAt if you noted a price on an earlier date."
+  ],
+  "prices": [
+    {
+      "partId": "cpu-ryzen-7-5700x",
+      "name": "AMD Ryzen 7 5700X",
+      "retailer": "Amazon",
+      "price": null,
+      "url": "https://www.amazon.com/dp/B09VCHQHZ6"
+    },
+    {
+      "partId": "mobo-msi-b550-tomahawk",
+      "name": "MSI MAG B550 Tomahawk",
+      "retailer": "Amazon",
+      "price": null,
+      "url": "https://www.amazon.com/dp/B089CWDHFZ"
+    },
+    {
+      "partId": "ram-ddr4-3600-cl16-32gb",
+      "name": "G.Skill Ripjaws V 32GB (2x16GB) DDR4-3600 CL16",
+      "retailer": "Amazon",
+      "price": null,
+      "url": "https://www.amazon.com/s?k=G.Skill%20Ripjaws%20V%2032GB%202x16GB%20DDR4-3600%20CL16"
+    },
+    {
+      "partId": "ssd-sk-hynix-p41-1tb",
+      "name": "SK hynix Platinum P41 1TB",
+      "retailer": "Amazon",
+      "price": null,
+      "url": "https://www.amazon.com/s?k=SK%20hynix%20Platinum%20P41%201TB%20NVMe%20SSD"
+    },
+    {
+      "partId": "psu-750w-gold-modular",
+      "name": "750W 80+ Gold Fully Modular PSU",
+      "retailer": "Amazon",
+      "price": null,
+      "url": "https://www.amazon.com/s?k=750W%2080%2B%20Gold%20fully%20modular%20power%20supply"
+    },
+    {
+      "partId": "gpu-asrock-rx-7900-xt",
+      "name": "ASRock Radeon RX 7900 XT 20GB",
+      "retailer": "Amazon",
+      "price": null,
+      "url": "https://www.amazon.com/dp/B0BRYWWDH2"
+    },
+    {
+      "partId": "cooler-hyper-212-black",
+      "name": "Cooler Master Hyper 212 Black",
+      "retailer": "Amazon",
+      "price": null,
+      "url": "https://www.amazon.com/dp/B07H25DYM3"
+    },
+    {
+      "partId": "case-nzxt-h6-flow",
+      "name": "NZXT H6 Flow",
+      "retailer": "Amazon",
+      "price": null,
+      "url": "https://www.amazon.com/dp/B0C89FCDFP"
+    },
+    {
+      "partId": "fan-arctic-p12",
+      "name": "Arctic P12 120mm Case Fan",
+      "retailer": "Amazon",
+      "price": null,
+      "url": "https://www.amazon.com/dp/B07GB16RK7"
+    }
+  ]
+}

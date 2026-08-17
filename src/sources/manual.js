@@ -14,7 +14,10 @@ export default {
   notes: 'Optional file. Prices you enter by hand; no network access.',
 
   isConfigured() {
-    return loadManualPrices().length > 0;
+    // At least one real price, not merely a file. A blank template must not
+    // activate this source: doing so would stand `sample` down, purge the
+    // synthetic history, and leave every part unpriced.
+    return loadManualPrices().some((row) => Number(row.price) > 0);
   },
 
   async fetch(parts) {
@@ -29,9 +32,13 @@ export default {
         errors.push(`manual: unknown partId "${row.partId}"`);
         continue;
       }
+      // A null/blank price is an unfilled template row, not a mistake — skip it
+      // quietly so a partly-filled file isn't reported as nine errors.
+      if (row.price == null || row.price === '') continue;
+
       const price = Number(row.price);
       if (!Number.isFinite(price) || price <= 0) {
-        errors.push(`manual: bad price for "${row.partId}"`);
+        errors.push(`manual: bad price for "${row.partId}" (${JSON.stringify(row.price)})`);
         continue;
       }
 

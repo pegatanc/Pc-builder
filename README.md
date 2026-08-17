@@ -76,19 +76,34 @@ honest ways to get its prices, in descending order of convenience:
    there's no AWS SDK dependency.
 2. **Keepa** (`keepa`) — a paid API that already tracks Amazon price history.
    No affiliate account, works immediately, costs money.
-3. **Manual entry** (`manual`) — the zero-cost fallback. Copy
-   `config/manual-prices.example.json` to `config/manual-prices.json`, check the
-   page in a browser yourself, and paste the number:
+3. **Manual entry** (`manual`) — the zero-cost fallback, and the fastest way to
+   replace the sample data. `config/manual-prices.json` ships pre-filled with all
+   nine parts and their links; open each one, read the price, type it in:
 
-   ```json
+   ```jsonc
    { "prices": [
-       { "partId": "cpu-ryzen-7-5700x", "retailer": "Amazon", "price": 148.99 }
+       { "partId": "cpu-ryzen-7-5700x", "name": "AMD Ryzen 7 5700X",
+         "retailer": "Amazon", "price": null,
+         "url": "https://www.amazon.com/dp/B09VCHQHZ6" }
    ] }
    ```
 
    Everything downstream — history, 30-day average, drop alerts, totals — works
    identically to an API-backed source. For a nine-part build checked twice a week,
    this is genuinely practical.
+
+   Three things to know:
+
+   - The source only activates once **at least one** price is non-null, so the blank
+     template is a no-op and the site keeps showing sample data until you fill it in.
+   - **Fill in all nine at once.** The first real price purges the synthetic history
+     (by design — so demo numbers can't skew your averages), and any part still left
+     at `null` will show as unpriced rather than falling back to sample data.
+   - Sparklines restart from the day you switch. Ninety days of synthetic history is
+     removed and real history accumulates from there.
+
+   Unlike `.env`, this file **is** committed — the Pages workflow runs on a fresh
+   checkout and can only see prices that are in the repo. It holds prices, not secrets.
 
 #### Why not just render the page in a browser?
 

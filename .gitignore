@@ -10,6 +10,7 @@ data/*
 *.db-shm
 *.db-wal
 .env
-config/manual-prices.json
+# NOT ignored: the Pages workflow runs on a fresh checkout, so hand-entered
+# prices must be committed for CI to see them. It holds prices, not secrets.
 .DS_Store
 npm-debug.log*
