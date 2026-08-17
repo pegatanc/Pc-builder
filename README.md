@@ -57,7 +57,7 @@ takes precedence over a fallback for the same retailer.
 | --------- | --------- | ----------------------- | --------------------------------------------------------- |
 | `paapi`   | Amazon    | free, but gated         | Approved Associates account → `PAAPI_ACCESS_KEY`, `PAAPI_SECRET_KEY`, `PAAPI_PARTNER_TAG` |
 | `keepa`   | Amazon    | paid subscription       | `KEEPA_API_KEY`                                            |
-| `bestbuy` | Best Buy  | free                    | `BESTBUY_API_KEY` from [developer.bestbuy.com](https://developer.bestbuy.com/) |
+| `bestbuy` | Best Buy  | free                    | `BESTBUY_API_KEY` — **disabled by default** (US-only retailer) |
 | `manual`  | any       | free                    | `config/manual-prices.json`                                |
 | `jsonld`  | any       | free                    | off by default — reads structured data from static HTML     |
 | `browser` | any       | free                    | off by default — renders the page in Chromium; `npm i playwright` |
@@ -180,9 +180,22 @@ The app also runs as a static site. `.github/workflows/prices.yml` fetches price
 on a 12-hour cron, commits the history back to the repo, builds a static copy and
 publishes it to Pages — no server, no bill.
 
-**Enable it once:** repo **Settings → Pages → Source: GitHub Actions**. Then run the
-workflow (Actions tab → *Update prices and publish* → *Run workflow*) or wait for the
-schedule. It publishes to `https://<user>.github.io/<repo>/`.
+**Enable it once, by hand:** repo **Settings → Pages → Build and deployment → Source:
+GitHub Actions**. Then run the workflow (Actions tab → *Update prices and publish* →
+*Run workflow*) or wait for the schedule. It publishes to `https://<user>.github.io/<repo>/`.
+
+Two things that make this step easy to get stuck on:
+
+- The **Source** dropdown only exists if the repository is public, or private on a
+  paid plan. On a private repo on the free plan the page shows an upgrade prompt and
+  no dropdown at all — so if you make the repo public, you have to come *back* to this
+  page afterwards to set the Source.
+- It genuinely cannot be automated from inside the workflow. `actions/configure-pages`
+  has an `enablement: true` option, but the default `GITHUB_TOKEN` is allowed to
+  deploy to Pages and not to create the site, so it fails with *"Create Pages site
+  failed: Resource not accessible by integration"*. Until the setting is changed, every
+  run fails at that step with *"Get Pages site failed"* — while every step before it
+  (tests, fetch, history commit, static build) succeeds.
 
 To use real prices instead of sample data, add whichever you have under
 **Settings → Secrets and variables → Actions**: `KEEPA_API_KEY`, `BESTBUY_API_KEY`,
@@ -240,9 +253,20 @@ it into SQLite and runs automatically at startup, so edits take effect on restar
 
 A part can have several listings; the tracker records a price per (part, retailer) and
 displays the cheapest in-stock one. ASINs are only set where they were supplied — none
-are guessed. Listings without an ASIN (the RAM kit, SSD and PSU, which were specified by
-class rather than by exact SKU) carry a `query` string that search-capable sources like
-Best Buy match on.
+are guessed.
+
+Every part links out from the table. Where an ASIN was supplied the link goes straight to
+the product page; the RAM kit, SSD and PSU were specified by class rather than exact SKU,
+so those resolve to an Amazon search built from the listing's `query` — the honest
+equivalent of "here's where to look" instead of inventing an ASIN for a product nobody
+picked. Links are derived at seed time from `sources.amazonDomain`, so pointing the whole
+build at another storefront (`www.amazon.co.uk`, `www.amazon.de`, …) is a one-line config
+change. Set `url` on a listing to override it.
+
+Best Buy is disabled by default, being US-only. Re-enable it in
+`sources.enabled.bestbuy` and add a `{ "retailer": "Best Buy", "query": "..." }` listing
+to any part if you want it back. If you switch `amazonDomain`, remember to update
+`currency`, `baselineTotal` and the `targets`, and set `KEEPA_DOMAIN` to match.
 
 ## The build
 
