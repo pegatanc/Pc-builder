@@ -3,10 +3,11 @@ import paapi from './paapi.js';
 import keepa from './keepa.js';
 import bestbuy from './bestbuy.js';
 import jsonld from './jsonld.js';
+import browser from './browser.js';
 import manual from './manual.js';
 import sample from './sample.js';
 
-export const registry = { paapi, keepa, bestbuy, jsonld, manual, sample };
+export const registry = { paapi, keepa, bestbuy, jsonld, browser, manual, sample };
 
 /** Sources in config order, annotated with whether they can actually run. */
 export function describeSources() {

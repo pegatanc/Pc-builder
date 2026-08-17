@@ -18,12 +18,13 @@
   },
 
   "sources": {
-    "order": ["paapi", "keepa", "bestbuy", "jsonld", "manual", "sample"],
+    "order": ["paapi", "keepa", "bestbuy", "jsonld", "browser", "manual", "sample"],
     "enabled": {
       "paapi": true,
       "keepa": true,
       "bestbuy": true,
       "jsonld": false,
+      "browser": false,
       "manual": true,
       "sample": true
     },

@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { parseRobots, selectGroup, isAllowedBy } from '../src/lib/robots.js';
 import { findOffer } from '../src/sources/jsonld.js';
+import { parsePrice } from '../src/lib/price.js';
 
 /**
  * robots.txt handling — the gate that keeps the HTML source honest. These
@@ -93,4 +94,32 @@ test('reads AggregateOffer lowPrice and out-of-stock availability', () => {
 test('returns null when there is no usable price', () => {
   assert.equal(findOffer([{ '@type': 'Product', name: 'No offers' }]), null);
   assert.equal(findOffer([{ '@type': 'Offer', price: '0' }]), null);
+});
+
+/** Price strings as retailers actually render them. */
+test('parses common US price formats', () => {
+  assert.equal(parsePrice('$203.00'), 203);
+  assert.equal(parsePrice('$1,234.56'), 1234.56);
+  assert.equal(parsePrice('US$99'), 99);
+  assert.equal(parsePrice('From $89.99'), 89.99);
+  assert.equal(parsePrice('  $7.35  '), 7.35);
+  assert.equal(parsePrice(629.99), 629.99);
+});
+
+test('parses European formats where , is the decimal separator', () => {
+  assert.equal(parsePrice('1.234,56 €'), 1234.56);
+  assert.equal(parsePrice('89,99 EUR'), 89.99);
+});
+
+test('treats a comma with three trailing digits as a thousands separator', () => {
+  assert.equal(parsePrice('1,234'), 1234);
+  assert.equal(parsePrice('$2,499'), 2499);
+});
+
+test('rejects unusable input rather than guessing', () => {
+  assert.equal(parsePrice(null), null);
+  assert.equal(parsePrice(''), null);
+  assert.equal(parsePrice('Currently unavailable'), null);
+  assert.equal(parsePrice('$0.00'), null);
+  assert.equal(parsePrice(-5), null);
 });

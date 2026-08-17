@@ -29,7 +29,7 @@ Other commands:
 npm run sources   # which price sources are configured, and what each one needs
 npm run fetch     # fetch prices once and exit
 npm run seed      # re-sync config/parts.json into the database
-npm test          # robots.txt + structured-data parsing tests
+npm test          # robots.txt precedence, price parsing, structured-data extraction
 ```
 
 ## Price sources
@@ -58,7 +58,8 @@ takes precedence over a fallback for the same retailer.
 | `keepa`   | Amazon    | paid subscription       | `KEEPA_API_KEY`                                            |
 | `bestbuy` | Best Buy  | free                    | `BESTBUY_API_KEY` from [developer.bestbuy.com](https://developer.bestbuy.com/) |
 | `manual`  | any       | free                    | `config/manual-prices.json`                                |
-| `jsonld`  | any       | free                    | off by default — see below                                 |
+| `jsonld`  | any       | free                    | off by default — reads structured data from static HTML     |
+| `browser` | any       | free                    | off by default — renders the page in Chromium; `npm i playwright` |
 | `sample`  | —         | free                    | nothing; synthetic demo data                               |
 
 Copy `.env.example` to `.env` and run `node --env-file=.env src/server.js` to load keys.
@@ -88,17 +89,76 @@ honest ways to get its prices, in descending order of convenience:
    identically to an API-backed source. For a nine-part build checked twice a week,
    this is genuinely practical.
 
-Scraping Amazon product pages is deliberately **not** implemented. Their terms of
-service prohibit automated access regardless of what `robots.txt` says, and any
-scraper you write will be fighting CAPTCHAs within days.
+#### Why not just render the page in a browser?
+
+Reasonable question — there's a `browser` source that does exactly that, and it
+works well on retailers that price client-side. It does not solve Amazon, and the
+reason is worth stating precisely, because it isn't the reason people usually assume.
+
+Amazon's `robots.txt` actually **allows** `/dp/` for `User-agent: *` (it blocks
+named crawlers like `GPTBot` and `Scrapy` with `Disallow: /`, and disallows a
+handful of `/dp/…` subpaths). And a plain request is not CAPTCHA-walled. Fetching
+the same product page twice, changing only the `User-Agent`:
+
+| User-Agent                                  | HTTP | Page size | Price in HTML |
+| ------------------------------------------- | ---- | --------- | ------------- |
+| `pc-builder-price-tracker/1.0` (honest)      | 200  | 356 KB    | **absent**    |
+| `Mozilla/5.0 … Chrome/131.0.0.0 Safari/537` | 200  | 2.1 MB    | **present**   |
+
+Both succeed. The self-identified client is simply served a stripped page with the
+price removed. So the price isn't behind JavaScript, and it isn't behind bot
+detection you could out-render — it's behind *not disclosing that you're a bot*.
+
+That's why a headless browser doesn't unlock it, and why anti-detection browsers
+(Camoufox, `puppeteer-extra-stealth`, and friends) aren't wired in either. Those
+tools exist specifically to defeat fingerprint-based bot detection; using one is
+choosing to misrepresent the client, and each escalation invites the next. This
+project stops at the line where a source has to lie about what it is.
+
+`sources.http.userAgent` in `config.json` is yours to set — it's your machine and
+your Amazon account. Just make the choice knowingly rather than by accident.
+The API and manual routes above exist precisely so you don't have to.
 
 The first real source you configure automatically deletes the synthetic sample
 history, so demo prices never contaminate your averages.
 
+### The `browser` source
+
+Renders a product page in real Chromium and reads the price from the DOM — for
+retailers that inject prices client-side, where a plain fetch returns a shell with
+no number in it. Newegg and B&H, for instance, both permit product pages under
+`User-agent: *`.
+
+```bash
+npm i playwright && npx playwright install chromium
+```
+
+Then enable it in `config.json` (`sources.enabled.browser`) and opt in per listing:
+
+```jsonc
+{
+  "retailer": "Newegg",
+  "url": "https://www.newegg.com/p/...",
+  "allowBrowser": true,
+  "priceSelector": ".price-current"   // optional; generic fallbacks are tried first
+}
+```
+
+It reuses one browser across a run, blocks images/fonts/media to stay light on the
+retailer, prefers rendered JSON-LD over CSS selectors, and takes the cheapest
+plausible reading so an accessory or bundle price doesn't win. `robots.txt` is
+checked *before* the browser launches, so a disallowed URL is refused on its own
+merits. Set `PLAYWRIGHT_CHROMIUM_PATH` to use a system Chromium instead of
+Playwright's own download.
+
+Playwright stays an optional dependency — the base install is small, and the
+browser tests skip themselves when it isn't present.
+
 ### The `jsonld` source
 
-A generic reader for retailers that publish schema.org product data and permit
-automated access. It's off by default and hard to misuse:
+A generic reader for retailers that publish schema.org product data in static HTML
+and permit automated access. Cheaper than `browser` when it works. It's off by
+default and hard to misuse:
 
 - disabled in `config.json` (`sources.enabled.jsonld`);
 - only touches a listing that explicitly sets `"allowHtml": true` in `parts.json`;
@@ -180,8 +240,8 @@ src/
   fetcher.js    runs sources, dedupes, writes history
   repo.js       queries: cheapest offer, daily series, 30-day stats, alerts
   db.js         schema + connection
-  sources/      paapi · keepa · bestbuy · jsonld · manual · sample
-  lib/          robots.js (robots.txt) · http.js (rate-limited fetch)
+  sources/      paapi · keepa · bestbuy · jsonld · browser · manual · sample
+  lib/          robots.js (robots.txt) · http.js (rate-limited fetch) · price.js (price parsing)
 public/       index.html · app.js (canvas sparklines) · styles.css
 data/         prices.db — created on first run, gitignored
 ```

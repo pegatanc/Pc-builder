@@ -9,7 +9,7 @@ const lastHit = new Map();
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-function throttle(host, delayMs) {
+export function throttle(host, delayMs = 0) {
   const prev = hostChains.get(host) || Promise.resolve();
   const next = prev.then(async () => {
     const since = Date.now() - (lastHit.get(host) || 0);
