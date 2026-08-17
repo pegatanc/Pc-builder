@@ -78,7 +78,12 @@ jobs:
             git push
           fi
 
+      # enablement: true turns Pages on via the API if it isn't already, so the
+      # workflow doesn't depend on someone having flipped Settings → Pages →
+      # Source to "GitHub Actions" by hand first.
       - uses: actions/configure-pages@v5
+        with:
+          enablement: true
 
       - uses: actions/upload-pages-artifact@v3
         with:
