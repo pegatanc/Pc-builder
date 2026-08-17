@@ -1,0 +1,9 @@
+node_modules/
+data/
+*.db
+*.db-shm
+*.db-wal
+.env
+config/manual-prices.json
+.DS_Store
+npm-debug.log*

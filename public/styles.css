@@ -1,0 +1,306 @@
+:root {
+  --bg: #0f1115;
+  --panel: #171a21;
+  --panel-2: #1d212a;
+  --line: #272c37;
+  --text: #e6e9ef;
+  --muted: #8b93a3;
+  --accent: #5aa9ff;
+  --good: #45c17a;
+  --warn: #f0b03a;
+  --bad: #ef6b6b;
+  --alert: #ff8a5c;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 14px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  padding: 24px clamp(16px, 4vw, 48px) 48px;
+}
+
+.topbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 20px;
+  letter-spacing: -0.01em;
+}
+
+.sub {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+button {
+  background: var(--accent);
+  color: #06101c;
+  border: 0;
+  border-radius: 7px;
+  padding: 8px 14px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+button:hover {
+  filter: brightness(1.08);
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: progress;
+}
+
+/* Summary cards */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.card .label {
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.card .value {
+  font-size: 24px;
+  font-weight: 650;
+  margin-top: 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+.card .hint {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+/* Table */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+th,
+td {
+  padding: 11px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+
+thead th {
+  background: var(--panel-2);
+  color: var(--muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+
+tbody tr:hover {
+  background: #1b1f28;
+}
+
+tbody tr.alert {
+  background: rgba(255, 138, 92, 0.07);
+}
+
+tbody tr.alert:hover {
+  background: rgba(255, 138, 92, 0.12);
+}
+
+.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.col-part {
+  min-width: 220px;
+}
+
+.col-spark {
+  width: 190px;
+}
+
+.part-name {
+  font-weight: 600;
+}
+
+.part-name a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.part-name a:hover {
+  text-decoration: underline;
+  text-decoration-color: var(--muted);
+}
+
+.part-meta {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.price {
+  font-weight: 650;
+  font-size: 15px;
+}
+
+.price.below-target {
+  color: var(--good);
+}
+
+td.num .delta {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.delta.up {
+  color: var(--bad);
+}
+
+.delta.down {
+  color: var(--good);
+}
+
+/* Badges */
+.pill {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.pill-retailer {
+  background: rgba(90, 169, 255, 0.12);
+  border-color: rgba(90, 169, 255, 0.35);
+  color: #9ccbff;
+}
+
+.pill-muted {
+  background: #232833;
+  border-color: var(--line);
+  color: var(--muted);
+}
+
+.pill-alert {
+  background: rgba(255, 138, 92, 0.14);
+  border-color: rgba(255, 138, 92, 0.45);
+  color: var(--alert);
+}
+
+.pill-good {
+  background: rgba(69, 193, 122, 0.13);
+  border-color: rgba(69, 193, 122, 0.4);
+  color: var(--good);
+}
+
+.pill-warn {
+  background: rgba(240, 176, 58, 0.13);
+  border-color: rgba(240, 176, 58, 0.4);
+  color: var(--warn);
+}
+
+.source-tag {
+  color: var(--muted);
+  font-size: 11px;
+  display: block;
+  margin-top: 3px;
+}
+
+.status-stack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+canvas.spark {
+  display: block;
+  width: 170px;
+  height: 34px;
+}
+
+.spark-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.spark-empty {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+tfoot td {
+  background: var(--panel-2);
+  font-weight: 650;
+  border-bottom: 0;
+}
+
+.empty {
+  color: var(--muted);
+  text-align: center;
+  padding: 28px;
+}
+
+.foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 14px;
+}
+
+/* Scroll the table rather than hiding columns — dropping a column would throw
+   off the footer's colspans. */
+main {
+  overflow-x: auto;
+}
+
+@media (max-width: 860px) {
+  table {
+    min-width: 780px;
+  }
+}
