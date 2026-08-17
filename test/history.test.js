@@ -159,3 +159,42 @@ test('a full round-trip preserves every observation', () => {
   ]);
   fs.rmSync(dir, { recursive: true, force: true });
 });
+
+test('history from a de-listed retailer stays in the record but not in the build view', () => {
+  const dir = tempDir();
+  const file = path.join(dir, 'price-history.ndjson');
+
+  // Best Buy was removed from parts.json, but its past observations remain in
+  // the history file — and are cheaper, so they would win "cheapest" if shown.
+  const rows = [
+    { part_id: 'fan-arctic-p12', retailer: 'Amazon', source: 'manual', price_cents: 999,
+      currency: 'USD', in_stock: 1, url: null, observed_at: '2026-08-01T12:00:00.000Z' },
+    { part_id: 'fan-arctic-p12', retailer: 'Best Buy', source: 'manual', price_cents: 500,
+      currency: 'USD', in_stock: 1, url: null, observed_at: '2026-08-01T12:00:00.000Z' },
+  ];
+  fs.writeFileSync(file, rows.map((r) => JSON.stringify(r)).join('\n') + '\n');
+
+  const out = runNode(
+    `import('./src/history.js').then(async (m) => {
+       m.importHistory(undefined, { log: () => {} });
+       const { db } = await import('./src/db.js');
+       const stored = db.prepare('SELECT COUNT(*) AS c FROM price_history').get().c;
+       const { getBuild } = await import('./src/repo.js');
+       const item = getBuild().items.find((i) => i.id === 'fan-arctic-p12');
+       console.log(JSON.stringify({
+         stored,
+         retailers: item.offers.map((o) => o.retailer),
+         bestRetailer: item.best?.retailer ?? null,
+         bestPrice: item.best?.price ?? null,
+       }));
+     })`,
+    dir
+  );
+
+  const result = JSON.parse(out.trim().split('\n').pop());
+  assert.equal(result.stored, 2, 'both observations are kept in the database');
+  assert.deepEqual(result.retailers, ['Amazon'], 'only tracked retailers are offered');
+  assert.equal(result.bestRetailer, 'Amazon');
+  assert.equal(result.bestPrice, 9.99, 'the cheaper de-listed price must not win');
+  fs.rmSync(dir, { recursive: true, force: true });
+});

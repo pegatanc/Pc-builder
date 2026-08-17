@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import { parseRobots, selectGroup, isAllowedBy } from '../src/lib/robots.js';
 import { findOffer } from '../src/sources/jsonld.js';
 import { parsePrice } from '../src/lib/price.js';
+import { amazonListingUrl, listingUrl, isProductUrl } from '../src/lib/links.js';
+import { loadParts } from '../src/config.js';
 
 /**
  * robots.txt handling — the gate that keeps the HTML source honest. These
@@ -122,4 +124,54 @@ test('rejects unusable input rather than guessing', () => {
   assert.equal(parsePrice('Currently unavailable'), null);
   assert.equal(parsePrice('$0.00'), null);
   assert.equal(parsePrice(-5), null);
+});
+
+/** Listing links. Every part must be clickable in the UI. */
+test('an ASIN listing links to the product page', () => {
+  assert.equal(
+    amazonListingUrl({ asin: 'B09VCHQHZ6' }),
+    'https://www.amazon.com/dp/B09VCHQHZ6'
+  );
+});
+
+test('a query-only listing links to a search, since no single product was chosen', () => {
+  assert.equal(
+    amazonListingUrl({ query: 'SK hynix Platinum P41 1TB' }),
+    'https://www.amazon.com/s?k=SK%20hynix%20Platinum%20P41%201TB'
+  );
+});
+
+test('links follow the configured Amazon domain', () => {
+  assert.equal(
+    amazonListingUrl({ asin: 'B09VCHQHZ6' }, 'www.amazon.co.uk'),
+    'https://www.amazon.co.uk/dp/B09VCHQHZ6'
+  );
+});
+
+test('an explicit url always wins over a derived one', () => {
+  assert.equal(
+    listingUrl({ retailer: 'Amazon', asin: 'B09VCHQHZ6', url: 'https://example.com/x' }),
+    'https://example.com/x'
+  );
+});
+
+test('product URLs are distinguishable from search URLs', () => {
+  assert.equal(isProductUrl('https://www.amazon.com/dp/B09VCHQHZ6'), true);
+  assert.equal(isProductUrl('https://www.amazon.com/s?k=ram'), false);
+  assert.equal(isProductUrl(null), false);
+});
+
+test('every seeded part resolves to a link, and none point at Best Buy', () => {
+  const parts = loadParts();
+  assert.equal(parts.length, 9);
+  for (const part of parts) {
+    assert.ok(part.listings.length > 0, `${part.id} has no listings`);
+    for (const listing of part.listings) {
+      assert.notEqual(listing.retailer, 'Best Buy', `${part.id} still lists Best Buy`);
+      assert.ok(
+        listingUrl(listing, { amazonDomain: 'www.amazon.com' }),
+        `${part.id} @ ${listing.retailer} has no resolvable link`
+      );
+    }
+  }
 });

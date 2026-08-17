@@ -57,7 +57,7 @@ takes precedence over a fallback for the same retailer.
 | --------- | --------- | ----------------------- | --------------------------------------------------------- |
 | `paapi`   | Amazon    | free, but gated         | Approved Associates account → `PAAPI_ACCESS_KEY`, `PAAPI_SECRET_KEY`, `PAAPI_PARTNER_TAG` |
 | `keepa`   | Amazon    | paid subscription       | `KEEPA_API_KEY`                                            |
-| `bestbuy` | Best Buy  | free                    | `BESTBUY_API_KEY` from [developer.bestbuy.com](https://developer.bestbuy.com/) |
+| `bestbuy` | Best Buy  | free                    | `BESTBUY_API_KEY` — **disabled by default** (US-only retailer) |
 | `manual`  | any       | free                    | `config/manual-prices.json`                                |
 | `jsonld`  | any       | free                    | off by default — reads structured data from static HTML     |
 | `browser` | any       | free                    | off by default — renders the page in Chromium; `npm i playwright` |
@@ -253,9 +253,20 @@ it into SQLite and runs automatically at startup, so edits take effect on restar
 
 A part can have several listings; the tracker records a price per (part, retailer) and
 displays the cheapest in-stock one. ASINs are only set where they were supplied — none
-are guessed. Listings without an ASIN (the RAM kit, SSD and PSU, which were specified by
-class rather than by exact SKU) carry a `query` string that search-capable sources like
-Best Buy match on.
+are guessed.
+
+Every part links out from the table. Where an ASIN was supplied the link goes straight to
+the product page; the RAM kit, SSD and PSU were specified by class rather than exact SKU,
+so those resolve to an Amazon search built from the listing's `query` — the honest
+equivalent of "here's where to look" instead of inventing an ASIN for a product nobody
+picked. Links are derived at seed time from `sources.amazonDomain`, so pointing the whole
+build at another storefront (`www.amazon.co.uk`, `www.amazon.de`, …) is a one-line config
+change. Set `url` on a listing to override it.
+
+Best Buy is disabled by default, being US-only. Re-enable it in
+`sources.enabled.bestbuy` and add a `{ "retailer": "Best Buy", "query": "..." }` listing
+to any part if you want it back. If you switch `amazonDomain`, remember to update
+`currency`, `baselineTotal` and the `targets`, and set `KEEPA_DOMAIN` to match.
 
 ## The build
 

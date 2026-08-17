@@ -1,5 +1,6 @@
 import { db } from './db.js';
-import { loadParts, ConfigError } from './config.js';
+import { loadParts, ConfigError, config } from './config.js';
+import { listingUrl } from './lib/links.js';
 
 /**
  * Catches config mistakes here, where we can name the offending entry, rather
@@ -92,7 +93,8 @@ export function seed({ log = console.log } = {}) {
           asin: listing.asin ?? null,
           sku: listing.sku ?? null,
           query: listing.query ?? null,
-          url: listing.url ?? null,
+          // Derived when not given, so every part is clickable in the UI.
+          url: listingUrl(listing, { amazonDomain: config.sources.amazonDomain }),
           allow_html: listing.allowHtml ? 1 : 0,
         });
         listingCount++;

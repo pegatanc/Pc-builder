@@ -1,13 +1,14 @@
 {
   "$comment": [
-    "Seed catalog. `npm run seed` upserts this into SQLite (safe to re-run).",
+    "Seed catalogue. `npm run seed` upserts this into SQLite (safe to re-run).",
     "A part can have several listings; the tracker records a price per (part, retailer)",
     "and shows the cheapest one. ASINs are only filled in where they were supplied —",
-    "no ASIN is guessed. Listings without an ASIN are matched by `query` on sources that",
-    "support search (Best Buy). `url` is informational unless `allowHtml` is true, which",
-    "opts that single listing into the robots.txt-checked HTML source."
+    "no ASIN is guessed. A listing without an ASIN carries a `query` instead: search-capable",
+    "sources match on it, and its link resolves to an Amazon search rather than a product",
+    "page, because those parts were specified by class rather than by exact SKU.",
+    "`url` is derived at seed time when omitted; set it explicitly to override.",
+    "`allowHtml` / `allowBrowser` opt a single listing into the robots.txt-checked sources."
   ],
-
   "parts": [
     {
       "id": "cpu-ryzen-7-5700x",
@@ -21,8 +22,7 @@
           "retailer": "Amazon",
           "asin": "B09VCHQHZ6",
           "url": "https://www.amazon.com/dp/B09VCHQHZ6"
-        },
-        { "retailer": "Best Buy", "query": "AMD Ryzen 7 5700X" }
+        }
       ]
     },
     {
@@ -37,8 +37,7 @@
           "retailer": "Amazon",
           "asin": "B089CWDHFZ",
           "url": "https://www.amazon.com/dp/B089CWDHFZ"
-        },
-        { "retailer": "Best Buy", "query": "MSI MAG B550 Tomahawk" }
+        }
       ]
     },
     {
@@ -49,8 +48,10 @@
       "model": "F4-3600C16D-32GVKC",
       "spec": "2x16GB, DDR4-3600, CL16-19-19-39, 1.35V",
       "listings": [
-        { "retailer": "Amazon", "query": "G.Skill Ripjaws V 32GB 2x16GB DDR4-3600 CL16" },
-        { "retailer": "Best Buy", "query": "32GB DDR4-3600 CL16 desktop memory kit" }
+        {
+          "retailer": "Amazon",
+          "query": "G.Skill Ripjaws V 32GB 2x16GB DDR4-3600 CL16"
+        }
       ]
     },
     {
@@ -61,8 +62,10 @@
       "model": "SHPP41-1000GM",
       "spec": "M.2 2280 NVMe PCIe 4.0, 7000/6500 MB/s",
       "listings": [
-        { "retailer": "Amazon", "query": "SK hynix Platinum P41 1TB NVMe SSD" },
-        { "retailer": "Best Buy", "query": "SK hynix Platinum P41 1TB" }
+        {
+          "retailer": "Amazon",
+          "query": "SK hynix Platinum P41 1TB NVMe SSD"
+        }
       ]
     },
     {
@@ -73,8 +76,10 @@
       "model": "EVGA SuperNOVA 750 GT / MSI MAG A750GL / Corsair RM750e",
       "spec": "750W, 80+ Gold, fully modular, ATX 3.x preferred",
       "listings": [
-        { "retailer": "Amazon", "query": "750W 80+ Gold fully modular power supply" },
-        { "retailer": "Best Buy", "query": "750 watt 80 plus gold fully modular power supply" }
+        {
+          "retailer": "Amazon",
+          "query": "750W 80+ Gold fully modular power supply"
+        }
       ]
     },
     {
@@ -89,8 +94,7 @@
           "retailer": "Amazon",
           "asin": "B0BRYWWDH2",
           "url": "https://www.amazon.com/dp/B0BRYWWDH2"
-        },
-        { "retailer": "Best Buy", "query": "Radeon RX 7900 XT 20GB" }
+        }
       ]
     },
     {
@@ -105,8 +109,7 @@
           "retailer": "Amazon",
           "asin": "B07H25DYM3",
           "url": "https://www.amazon.com/dp/B07H25DYM3"
-        },
-        { "retailer": "Best Buy", "query": "Cooler Master Hyper 212 Black" }
+        }
       ]
     },
     {
@@ -121,8 +124,7 @@
           "retailer": "Amazon",
           "asin": "B0C89FCDFP",
           "url": "https://www.amazon.com/dp/B0C89FCDFP"
-        },
-        { "retailer": "Best Buy", "query": "NZXT H6 Flow" }
+        }
       ]
     },
     {
@@ -137,8 +139,7 @@
           "retailer": "Amazon",
           "asin": "B07GB16RK7",
           "url": "https://www.amazon.com/dp/B07GB16RK7"
-        },
-        { "retailer": "Best Buy", "query": "Arctic P12 120mm case fan" }
+        }
       ]
     }
   ]

@@ -10,14 +10,21 @@ const listParts = db.prepare(`
   ORDER BY sort_order, name
 `);
 
-/** Most recent observation for each (part, retailer) pair. */
+/**
+ * Both queries join `listings`, which restricts them to retailers the part is
+ * still tracked at. History is append-only and retains observations from
+ * retailers since removed from parts.json — those stay in the record, but must
+ * not resurface as a current offer, win "cheapest", or skew the 30-day average
+ * the drop alert is measured against.
+ */
 const latestPerRetailer = db.prepare(`
   SELECT part_id, retailer, source, price_cents, currency, in_stock, url, observed_at
   FROM (
-    SELECT *, ROW_NUMBER() OVER (
-      PARTITION BY part_id, retailer ORDER BY observed_at DESC, id DESC
+    SELECT ph.*, ROW_NUMBER() OVER (
+      PARTITION BY ph.part_id, ph.retailer ORDER BY ph.observed_at DESC, ph.id DESC
     ) AS rn
-    FROM price_history
+    FROM price_history ph
+    JOIN listings l ON l.part_id = ph.part_id AND l.retailer = ph.retailer
   )
   WHERE rn = 1
 `);
@@ -27,14 +34,15 @@ const latestPerRetailer = db.prepare(`
  * keeps the sparkline honest when a fetch runs twice in a day.
  */
 const dailySeries = db.prepare(`
-  SELECT part_id,
-         DATE(observed_at) AS day,
-         MIN(price_cents)  AS price_cents
-  FROM price_history
-  WHERE observed_at >= DATETIME('now', ?)
-    AND in_stock = 1
-  GROUP BY part_id, day
-  ORDER BY part_id, day
+  SELECT ph.part_id                AS part_id,
+         DATE(ph.observed_at)      AS day,
+         MIN(ph.price_cents)       AS price_cents
+  FROM price_history ph
+  JOIN listings l ON l.part_id = ph.part_id AND l.retailer = ph.retailer
+  WHERE ph.observed_at >= DATETIME('now', ?)
+    AND ph.in_stock = 1
+  GROUP BY ph.part_id, day
+  ORDER BY ph.part_id, day
 `);
 
 const listingsStmt = db.prepare(`
