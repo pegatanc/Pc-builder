@@ -313,6 +313,11 @@ to any part if you want it back. If you switch `amazonDomain`, remember to updat
 
 ## Reading the table
 
+- **Sorting** — click any column header to sort; click again to reverse, and a
+  third time to return to catalogue order (CPU, board, memory…). The choice is
+  remembered across reloads, and headers are keyboard-operable.
+- **On a phone** — below 720px each row becomes its own card with inline labels
+  and a full-width sparkline, instead of a horizontally scrolling table.
 - **90-day history** — hover any sparkline for the exact price and date on that day.
   The build total card carries its own trend line, so you can see whether the build
   as a whole is getting cheaper.

@@ -176,7 +176,105 @@ function formatDayShort(day) {
     : date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
+/* ---------- sorting ---------- */
+
+/**
+ * Sort keys per column. `dir` is the direction applied on first click — the
+ * interesting end first, so clicking "Cheapest" leads with the expensive parts
+ * and clicking "Status" leads with the biggest drop.
+ */
+const SORTS = {
+  part: { label: 'Part', dir: 1, value: (i) => i.name.toLowerCase() },
+  price: { label: 'Cheapest', dir: -1, value: (i) => i.best?.price ?? null },
+  retailer: { label: 'Retailer', dir: 1, value: (i) => i.best?.retailer?.toLowerCase() ?? null },
+  avg: { label: '30-day avg', dir: -1, value: (i) => i.stats.avgWindow },
+  low: { label: 'Lowest seen', dir: -1, value: (i) => i.stats.aboveLowPercent },
+  target: { label: 'Target', dir: -1, value: (i) => i.target },
+  status: { label: 'Status', dir: -1, value: (i) => i.stats.dropPercent },
+};
+
+const SORT_KEY = 'pc-tracker-sort';
+
+function loadSort() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(SORT_KEY) || 'null');
+    return saved && SORTS[saved.column] ? saved : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveSort(sort) {
+  try {
+    if (sort) localStorage.setItem(SORT_KEY, JSON.stringify(sort));
+    else localStorage.removeItem(SORT_KEY);
+  } catch {
+    /* private mode — sorting still works, it just won't persist */
+  }
+}
+
+let sortState = loadSort();
+
+/** Null values always sink, whichever way the column is pointing. */
+function sortItems(items, sort) {
+  if (!sort) return items;
+  const spec = SORTS[sort.column];
+  if (!spec) return items;
+
+  return [...items].sort((a, b) => {
+    const av = spec.value(a);
+    const bv = spec.value(b);
+    if (av == null && bv == null) return 0;
+    if (av == null) return 1;
+    if (bv == null) return -1;
+    if (typeof av === 'string') return av.localeCompare(bv) * sort.dir;
+    return (av - bv) * sort.dir;
+  });
+}
+
+/**
+ * Three states per column: off, primary direction, reversed. Cycling back to
+ * off restores catalogue order, which is meaningful here (CPU, board, RAM…).
+ */
+function cycleSort(column) {
+  const spec = SORTS[column];
+  if (!spec) return;
+
+  if (!sortState || sortState.column !== column) sortState = { column, dir: spec.dir };
+  else if (sortState.dir === spec.dir) sortState = { column, dir: -spec.dir };
+  else sortState = null;
+
+  saveSort(sortState);
+  if (lastData) renderTable(lastData);
+}
+
+function wireSortHeaders() {
+  for (const th of document.querySelectorAll('thead th[data-sort]')) {
+    const column = th.dataset.sort;
+    th.tabIndex = 0;
+    th.setAttribute('role', 'button');
+    th.addEventListener('click', () => cycleSort(column));
+    th.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        cycleSort(column);
+      }
+    });
+  }
+}
+
+function paintSortHeaders() {
+  for (const th of document.querySelectorAll('thead th[data-sort]')) {
+    const active = sortState?.column === th.dataset.sort;
+    th.classList.toggle('sorted', active);
+    th.setAttribute('aria-sort', active ? (sortState.dir === 1 ? 'ascending' : 'descending') : 'none');
+    const arrow = th.querySelector('.sort-arrow');
+    if (arrow) arrow.textContent = active ? (sortState.dir === 1 ? '▲' : '▼') : '';
+  }
+}
+
 /* ---------- rendering ---------- */
+
 
 function renderSummary(data) {
   const { summary, currency } = data;
@@ -191,9 +289,12 @@ function renderSummary(data) {
       label: 'Build total',
       value: money(summary.total, currency),
       hint:
-        summary.totalLow != null
-          ? `Lowest ${money(summary.totalLow, currency)} on ${formatDay(summary.totalLowDay)}`
-          : `${summary.pricedParts} of ${summary.totalParts} parts priced`,
+        summary.pricedParts < summary.totalParts
+          ? `Only ${summary.pricedParts} of ${summary.totalParts} parts priced — total is incomplete`
+          : summary.totalLow != null
+            ? `Lowest ${money(summary.totalLow, currency)} on ${formatDay(summary.totalLowDay)}`
+            : `${summary.pricedParts} of ${summary.totalParts} parts priced`,
+      warn: summary.pricedParts < summary.totalParts,
       trend: true,
     },
     {
@@ -220,6 +321,7 @@ function renderSummary(data) {
   for (const card of cards) {
     const node = el('div', 'card');
     node.append(el('div', 'label', card.label));
+    if (card.warn) node.classList.add('card-warn');
     const value = el('div', `value ${card.valueClass || ''}`.trim(), card.value);
     if (card.valueClass === 'up') value.style.color = 'var(--bad)';
     if (card.valueClass === 'down') value.style.color = 'var(--good)';
@@ -263,6 +365,7 @@ function renderPartRow(item, currency) {
     nameNode.textContent = item.name;
   }
   partCell.append(nameNode, el('div', 'part-meta', `${item.category} · ${item.spec || item.model || ''}`));
+  partCell.dataset.label = 'Part';
   row.append(partCell);
 
   // Cheapest price
@@ -276,6 +379,7 @@ function renderPartRow(item, currency) {
       el('span', `delta ${diff > 0 ? 'up' : 'down'}`, `${signed(diff, currency)} vs target`)
     );
   }
+  priceCell.dataset.label = 'Cheapest';
   row.append(priceCell);
 
   // Retailer badge
@@ -285,7 +389,18 @@ function renderPartRow(item, currency) {
     retailerCell.append(el('span', 'source-tag', `via ${item.best.source}`));
   } else {
     retailerCell.append(pill('no price', 'pill-muted'));
+    if (link) {
+      const help = el('span', 'source-tag', 'set a price →');
+      const a = el('a', 'unpriced-link');
+      a.href = link;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.textContent = 'check';
+      help.append(' ', a);
+      retailerCell.append(help);
+    }
   }
+  retailerCell.dataset.label = 'Retailer';
   row.append(retailerCell);
 
   // Sparkline
@@ -313,6 +428,7 @@ function renderPartRow(item, currency) {
   } else {
     sparkCell.append(el('span', 'spark-empty', 'not enough history'));
   }
+  sparkCell.dataset.label = '90-day history';
   row.append(sparkCell);
 
   // 30-day average
@@ -324,6 +440,7 @@ function renderPartRow(item, currency) {
       el('span', `delta ${pct > 0 ? 'down' : 'up'}`, `${pct > 0 ? '−' : '+'}${Math.abs(pct)}%`)
     );
   }
+  avgCell.dataset.label = '30-day avg';
   row.append(avgCell);
 
   // Lowest seen — the "is this a good price?" column.
@@ -338,10 +455,13 @@ function renderPartRow(item, currency) {
       )
     );
   }
+  lowCell.dataset.label = 'Lowest seen';
   row.append(lowCell);
 
   // Target
-  row.append(el('td', 'num', money(item.target, currency)));
+  const targetCell = el('td', 'num', money(item.target, currency));
+  targetCell.dataset.label = 'Target';
+  row.append(targetCell);
 
   // Status
   const statusCell = el('td');
@@ -353,6 +473,7 @@ function renderPartRow(item, currency) {
   if (item.flags.noPrice) stack.append(pill('unpriced', 'pill-muted'));
   if (!stack.childElementCount) stack.append(pill('tracking', 'pill-muted'));
   statusCell.append(stack);
+  statusCell.dataset.label = 'Status';
   row.append(statusCell);
 
   return row;
@@ -373,24 +494,39 @@ function renderTable(data) {
     return;
   }
 
-  for (const item of data.items) body.append(renderPartRow(item, data.currency));
+  for (const item of sortItems(data.items, sortState)) {
+    body.append(renderPartRow(item, data.currency));
+  }
+  paintSortHeaders();
 
   const { summary, currency } = data;
   const totalRow = el('tr');
-  totalRow.append(el('td', null, 'Grand total'));
+  const labelCell = el('td', null, 'Grand total');
+  labelCell.dataset.label = '';
+  totalRow.append(labelCell);
 
   const totalCell = el('td', 'num');
   totalCell.append(el('span', 'price', money(summary.total, currency)));
   const deltaText = `${signed(summary.baselineDelta, currency)} vs ${money(summary.baseline, currency)} baseline`;
   totalCell.append(el('span', `delta ${summary.baselineDelta > 0 ? 'up' : 'down'}`, deltaText));
+  totalCell.dataset.label = 'Build total';
   totalRow.append(totalCell);
 
   const spacer = el('td');
   spacer.colSpan = 3;
   totalRow.append(spacer);
-  totalRow.append(el('td', 'num', money(summary.totalLow, currency)));
-  totalRow.append(el('td', 'num', money(summary.targetTotal, currency)));
-  totalRow.append(el('td', null, `${summary.alerts} alert${summary.alerts === 1 ? '' : 's'}`));
+
+  const lowCell = el('td', 'num', money(summary.totalLow, currency));
+  lowCell.dataset.label = 'Lowest ever';
+  totalRow.append(lowCell);
+
+  const targetCell = el('td', 'num', money(summary.targetTotal, currency));
+  targetCell.dataset.label = 'Target total';
+  totalRow.append(targetCell);
+
+  const alertCell = el('td', null, `${summary.alerts} alert${summary.alerts === 1 ? '' : 's'}`);
+  alertCell.dataset.label = 'Alerts';
+  totalRow.append(alertCell);
 
   foot.replaceChildren(totalRow);
 }
@@ -478,6 +614,8 @@ function applyMode(data) {
     note.textContent = `Static build · generated ${new Date(data.generatedAt).toLocaleString()}`;
   }
 }
+
+wireSortHeaders();
 
 document.getElementById('refresh').addEventListener('click', async (event) => {
   const button = event.currentTarget;
