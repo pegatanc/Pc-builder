@@ -20,7 +20,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 function runNode(script, dataDir) {
   return execFileSync(process.execPath, ['-e', script], {
     cwd: ROOT,
-    env: { ...process.env, DATA_DIR: dataDir },
+    env: { ...process.env, DATA_DIR: dataDir, HISTORY_DIR: dataDir },
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
   });

@@ -235,6 +235,43 @@ td.num .delta {
   color: var(--good);
 }
 
+/* Sparkline tooltip */
+.spark-tip {
+  position: absolute;
+  z-index: 20;
+  pointer-events: none;
+  background: #0b0d11;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 5px 9px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  white-space: nowrap;
+}
+
+.spark-tip[hidden] {
+  display: none;
+}
+
+.spark-tip-price {
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+}
+
+.spark-tip-day {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.pill-low {
+  background: rgba(155, 125, 255, 0.15);
+  border-color: rgba(155, 125, 255, 0.45);
+  color: #b9a4ff;
+}
+
 .static-note {
   color: var(--muted);
   font-size: 12px;
@@ -263,6 +300,14 @@ canvas.spark {
   display: block;
   width: 170px;
   height: 34px;
+  cursor: crosshair;
+}
+
+/* Must follow `canvas.spark`: same specificity, so source order decides. */
+canvas.spark-wide {
+  width: 100%;
+  height: 30px;
+  margin-top: 8px;
 }
 
 .spark-wrap {
@@ -298,14 +343,199 @@ tfoot td {
   margin-top: 14px;
 }
 
-/* Scroll the table rather than hiding columns — dropping a column would throw
-   off the footer's colspans. */
+/* Sortable headers */
+thead th[data-sort] {
+  cursor: pointer;
+  user-select: none;
+}
+
+thead th[data-sort]:hover {
+  color: var(--text);
+}
+
+thead th[data-sort]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+thead th.sorted {
+  color: var(--accent);
+}
+
+.sort-arrow {
+  font-size: 9px;
+  margin-left: 5px;
+  vertical-align: 1px;
+}
+
+.card-warn {
+  border-color: rgba(240, 176, 58, 0.45);
+}
+
+.card-warn .hint {
+  color: var(--warn);
+}
+
+.unpriced-link {
+  color: var(--accent);
+}
+
+/* Between the full table and the phone layout, let the table scroll rather
+   than hiding columns — dropping one would throw off the footer's colspans. */
 main {
   overflow-x: auto;
 }
 
-@media (max-width: 860px) {
+@media (min-width: 721px) and (max-width: 1080px) {
   table {
-    min-width: 780px;
+    min-width: 880px;
+  }
+}
+
+/*
+ * Phone layout. A horizontally scrolling 8-column table is unusable on a
+ * handset, and checking prices on a phone is the main way this gets read — so
+ * below 720px each row becomes a self-contained card, with the header labels
+ * moved inline via each cell's data-label.
+ */
+@media (max-width: 720px) {
+  body {
+    padding: 16px 12px 32px;
+  }
+
+  /* Two-up: the default minmax(180px) misses a second column by a few pixels
+     on a 390px handset, which pushed the parts list a full screen down. */
+  .cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .card {
+    padding: 11px 12px;
+  }
+
+  .card .value {
+    font-size: 20px;
+  }
+
+  h1 {
+    font-size: 18px;
+  }
+
+  main {
+    overflow-x: visible;
+  }
+
+  table,
+  tbody,
+  tfoot,
+  tr,
+  td {
+    display: block;
+    width: 100%;
+  }
+
+  /* Class selectors, so they outrank the `td` rule above and must be reset
+     explicitly or the cells keep their desktop column widths. */
+  .col-spark,
+  .col-part {
+    width: auto;
+    min-width: 0;
+  }
+
+  thead {
+    display: none;
+  }
+
+  table {
+    border: 0;
+    background: none;
+  }
+
+  tbody tr {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    margin-bottom: 10px;
+    padding: 4px 2px;
+  }
+
+  tbody tr.alert {
+    border-color: rgba(255, 138, 92, 0.45);
+  }
+
+  td {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 7px 13px;
+    border-bottom: 0;
+    text-align: right;
+  }
+
+  td::before {
+    content: attr(data-label);
+    color: var(--muted);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    text-align: left;
+    flex: 0 0 auto;
+  }
+
+  /* The part name leads the card, so it gets no label and sits full width. */
+  td[data-label='Part'] {
+    display: block;
+    text-align: left;
+    padding-top: 11px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 4px;
+  }
+
+  td[data-label='Part']::before {
+    content: none;
+  }
+
+  /* Give the sparkline the full card width instead of a 170px column. */
+  td[data-label='90-day history'] {
+    display: block;
+    padding-bottom: 11px;
+  }
+
+  td[data-label='90-day history']::before {
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .spark-wrap,
+  canvas.spark {
+    width: 100%;
+  }
+
+  td.num .delta {
+    display: inline;
+    margin-left: 6px;
+  }
+
+  .status-stack {
+    justify-content: flex-end;
+  }
+
+  /* The footer's spacer cell has no meaning once rows are stacked. */
+  tfoot td:not([data-label]) {
+    display: none;
+  }
+
+  tfoot tr {
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 4px 2px;
+  }
+
+  tfoot td {
+    background: none;
   }
 }

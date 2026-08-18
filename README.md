@@ -29,6 +29,7 @@ Other commands:
 npm run sources   # which price sources are configured, and what each one needs
 npm run fetch     # fetch prices once and exit
 npm run seed      # re-sync config/parts.json into the database
+npm run price     # list manual prices; `npm run price cpu 148.99` sets one
 npm run site      # build the static site into ./site (see GitHub Pages below)
 npm test          # robots.txt precedence, price parsing, history round-trip
 ```
@@ -76,19 +77,47 @@ honest ways to get its prices, in descending order of convenience:
    there's no AWS SDK dependency.
 2. **Keepa** (`keepa`) — a paid API that already tracks Amazon price history.
    No affiliate account, works immediately, costs money.
-3. **Manual entry** (`manual`) — the zero-cost fallback. Copy
-   `config/manual-prices.example.json` to `config/manual-prices.json`, check the
-   page in a browser yourself, and paste the number:
+3. **Manual entry** (`manual`) — the zero-cost fallback, and the fastest way to
+   replace the sample data. `config/manual-prices.json` ships pre-filled with all
+   nine parts and their links; open each one, read the price, type it in:
 
-   ```json
+   ```jsonc
    { "prices": [
-       { "partId": "cpu-ryzen-7-5700x", "retailer": "Amazon", "price": 148.99 }
+       { "partId": "cpu-ryzen-7-5700x", "name": "AMD Ryzen 7 5700X",
+         "retailer": "Amazon", "price": null,
+         "url": "https://www.amazon.com/dp/B09VCHQHZ6" }
    ] }
    ```
 
    Everything downstream — history, 30-day average, drop alerts, totals — works
    identically to an API-backed source. For a nine-part build checked twice a week,
    this is genuinely practical.
+
+   Three things to know:
+
+   - The source only activates once **at least one** price is non-null, so the blank
+     template is a no-op and the site keeps showing sample data until you fill it in.
+   - **Fill in all nine at once.** The first real price purges the synthetic history
+     (by design — so demo numbers can't skew your averages), and any part still left
+     at `null` will show as unpriced rather than falling back to sample data.
+   - Sparklines restart from the day you switch. Ninety days of synthetic history is
+     removed and real history accumulates from there.
+
+   Unlike `.env`, this file **is** committed — the Pages workflow runs on a fresh
+   checkout and can only see prices that are in the repo. It holds prices, not secrets.
+
+   You don't have to edit the JSON by hand:
+
+   ```bash
+   npm run price                  # what's filled in, what isn't
+   npm run price cpu 148.99       # any unambiguous fragment of the id or name
+   npm run price gpu '$1,234.56'  # pasted currency strings are fine
+   npm run price cpu clear        # back to null
+   ```
+
+   It refuses an ambiguous fragment rather than guessing, and stamps `observedAt`
+   with the date. (`clear` is a bare word because `npm run` swallows `--clear`
+   before it reaches the script.)
 
 #### Why not just render the page in a browser?
 
@@ -203,7 +232,7 @@ or `PAAPI_ACCESS_KEY` + `PAAPI_SECRET_KEY` + `PAAPI_PARTNER_TAG`. The workflow p
 up whatever is present and falls back to sample data otherwise.
 
 How it holds price history without a database server: each run restores SQLite from
-`data/price-history.ndjson`, fetches, and writes the file back. It's append-only text,
+`history/price-history.ndjson`, fetches, and writes the file back. It's append-only text,
 so a twice-daily fetch adds a couple of KB that git stores as a small delta — where a
 committed SQLite file would be a fresh ~1 MB binary blob every run.
 
@@ -282,6 +311,22 @@ to any part if you want it back. If you switch `amazonDomain`, remember to updat
 | Case           | NZXT H6 Flow (`B0C89FCDFP`)                    | $95    |
 | Case Fan       | Arctic P12 (`B07GB16RK7`)                      | $8     |
 
+## Reading the table
+
+- **Sorting** — click any column header to sort; click again to reverse, and a
+  third time to return to catalogue order (CPU, board, memory…). The choice is
+  remembered across reloads, and headers are keyboard-operable.
+- **On a phone** — below 720px each row becomes its own card with inline labels
+  and a full-width sparkline, instead of a horizontally scrolling table.
+- **90-day history** — hover any sparkline for the exact price and date on that day.
+  The build total card carries its own trend line, so you can see whether the build
+  as a whole is getting cheaper.
+- **Lowest seen** — the cheapest that part has been in the tracked window, with how
+  far above it the current price sits. A part matching its own record gets a
+  `★ lowest yet` badge; the footer shows the cheapest the whole build has ever been.
+- **Status** — `▼ n% drop` when the alert rule fires, `at target` when at or below
+  the configured target, `stale` when the last observation is over a week old.
+
 ## How alerting works
 
 Every observation is appended to `price_history` — rows are never updated. For the
@@ -318,7 +363,9 @@ src/
   history.js    SQLite ⇄ NDJSON, so GitHub Actions can carry history between runs
   export-static.js  builds ./site for GitHub Pages
 public/       index.html · app.js (canvas sparklines) · styles.css
-data/         prices.db (gitignored) · price-history.ndjson (committed)
+data/         prices.db — disposable, gitignored, rebuilt from history/ on demand
+history/      price-history.ndjson — the committed record, deliberately outside data/
+              so `rm -rf data` to reset the database cannot take the history with it
 .github/      workflows/prices.yml — 12h fetch, commit history, publish to Pages
 ```
 

@@ -129,7 +129,15 @@ export function getBuild() {
     const dropAlert =
       enoughSamples && dropPercent != null && dropPercent >= alerts.dropPercent;
 
-    const allPrices = series.map((p) => p.price);
+    // Extremes over the whole tracked window, with the day they happened —
+    // "is this actually a good price?" is the question a tracker exists to answer.
+    const extreme = (pick) =>
+      series.length ? series.reduce((a, b) => (pick(b.price, a.price) ? b : a)) : null;
+    const lowest = extreme((candidate, current) => candidate < current);
+    const highest = extreme((candidate, current) => candidate > current);
+
+    // Within a cent counts as matching, so rounding never hides the badge.
+    const atLowest = !!(best && lowest && Math.abs(best.price - lowest.price) < 0.01);
 
     return {
       id: part.id,
@@ -154,13 +162,21 @@ export function getBuild() {
         windowDays: alerts.windowDays,
         avgWindow,
         samples: windowPoints.length,
-        low: allPrices.length ? Math.min(...allPrices) : null,
-        high: allPrices.length ? Math.max(...allPrices) : null,
+        low: lowest?.price ?? null,
+        lowDay: lowest?.day ?? null,
+        high: highest?.price ?? null,
+        highDay: highest?.day ?? null,
         dropPercent: dropPercent == null ? null : Number(dropPercent.toFixed(1)),
+        // How far above the cheapest it has ever been, in percent.
+        aboveLowPercent:
+          best && lowest?.price
+            ? Number((((best.price - lowest.price) / lowest.price) * 100).toFixed(1))
+            : null,
       },
       flags: {
         drop: dropAlert,
         atOrBelowTarget: !!(best && target != null && best.price <= target),
+        atLowest,
         noPrice: !best,
         stale: !!best?.stale,
       },
@@ -171,12 +187,36 @@ export function getBuild() {
   const total = priced.reduce((sum, i) => sum + i.best.price, 0);
   const targetTotal = items.reduce((sum, i) => sum + (i.target ?? 0), 0);
 
+  // Build total per day, over only the days where every tracked part has a
+  // price. A day missing one part would otherwise read as a sudden discount.
+  const tracked = items.filter((i) => i.series.length);
+  const byDay = new Map();
+  for (const item of tracked) {
+    for (const point of item.series) {
+      const entry = byDay.get(point.day) || { sum: 0, parts: 0 };
+      entry.sum += point.price;
+      entry.parts += 1;
+      byDay.set(point.day, entry);
+    }
+  }
+  const totalSeries = [...byDay.entries()]
+    .filter(([, entry]) => entry.parts === tracked.length)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([day, entry]) => ({ day, price: Number(entry.sum.toFixed(2)) }));
+
+  const totalLow = totalSeries.length
+    ? totalSeries.reduce((a, b) => (b.price < a.price ? b : a))
+    : null;
+
   return {
     currency,
     generatedAt: new Date().toISOString(),
     items,
+    totalSeries,
     summary: {
       total: Number(total.toFixed(2)),
+      totalLow: totalLow?.price ?? null,
+      totalLowDay: totalLow?.day ?? null,
       pricedParts: priced.length,
       totalParts: items.length,
       baseline: baselineTotal,

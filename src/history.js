@@ -12,10 +12,17 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { db } from './db.js';
-import { DATA_DIR } from './config.js';
+import { ROOT } from './config.js';
 import { seed } from './seed.js';
 
-export const HISTORY_FILE = path.join(DATA_DIR, 'price-history.ndjson');
+/**
+ * Deliberately NOT inside data/. That directory holds the disposable SQLite
+ * database and gets wiped routinely (`rm -rf data` to start over); this file is
+ * the committed record and the only copy of the price history, so it lives in
+ * its own directory where a reset cannot take it with it.
+ */
+export const HISTORY_DIR = process.env.HISTORY_DIR || path.join(ROOT, 'history');
+export const HISTORY_FILE = path.join(HISTORY_DIR, 'price-history.ndjson');
 
 const COLUMNS = [
   'part_id',

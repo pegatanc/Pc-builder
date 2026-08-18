@@ -30,18 +30,19 @@
       <table id="parts-table">
         <thead>
           <tr>
-            <th class="col-part">Part</th>
-            <th class="num">Cheapest</th>
-            <th>Retailer</th>
+            <th class="col-part" data-sort="part">Part<span class="sort-arrow"></span></th>
+            <th class="num" data-sort="price">Cheapest<span class="sort-arrow"></span></th>
+            <th data-sort="retailer">Retailer<span class="sort-arrow"></span></th>
             <th class="col-spark">90-day history</th>
-            <th class="num">30-day avg</th>
-            <th class="num">Target</th>
-            <th>Status</th>
+            <th class="num" data-sort="avg">30-day avg<span class="sort-arrow"></span></th>
+            <th class="num" data-sort="low">Lowest seen<span class="sort-arrow"></span></th>
+            <th class="num" data-sort="target">Target<span class="sort-arrow"></span></th>
+            <th data-sort="status">Status<span class="sort-arrow"></span></th>
           </tr>
         </thead>
         <tbody id="parts-body">
           <tr>
-            <td colspan="7" class="empty">Loading parts…</td>
+            <td colspan="8" class="empty">Loading parts…</td>
           </tr>
         </tbody>
         <tfoot id="parts-foot"></tfoot>
