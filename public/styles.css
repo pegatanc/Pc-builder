@@ -71,6 +71,23 @@ button:disabled {
   cursor: progress;
 }
 
+.btn-secondary {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--line);
+}
+
+.btn-secondary:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  filter: none;
+}
+
+.btn-secondary.flash {
+  border-color: var(--good);
+  color: var(--good);
+}
+
 /* Summary cards */
 .cards {
   display: grid;
@@ -421,6 +438,15 @@ main {
 
   h1 {
     font-size: 18px;
+  }
+
+  .actions {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .actions button {
+    flex: 1 1 auto;
   }
 
   main {
