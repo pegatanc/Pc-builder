@@ -36,7 +36,11 @@ export function exportStatic({ log = console.log } = {}) {
   fs.writeFileSync(path.join(SITE_DIR, 'build.json'), JSON.stringify(build, null, 2));
   fs.writeFileSync(
     path.join(SITE_DIR, 'sources.json'),
-    JSON.stringify({ sources: describeSources(), schedule: config.schedule, static: true }, null, 2)
+    JSON.stringify(
+      { sources: describeSources(), schedule: config.schedule, site: config.site ?? {}, static: true },
+      null,
+      2
+    )
   );
 
   // Jekyll would otherwise swallow files it doesn't recognise.

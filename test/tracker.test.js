@@ -5,6 +5,10 @@ import { findOffer } from '../src/sources/jsonld.js';
 import { parsePrice } from '../src/lib/price.js';
 import { amazonListingUrl, listingUrl, isProductUrl } from '../src/lib/links.js';
 import { loadParts } from '../src/config.js';
+import {
+  extractPrice as extractCanopyPrice,
+  isInStock as canopyInStock,
+} from '../src/sources/canopy.js';
 
 /**
  * robots.txt handling — the gate that keeps the HTML source honest. These
@@ -174,4 +178,36 @@ test('every seeded part resolves to a link, and none point at Best Buy', () => {
       );
     }
   }
+});
+
+/** Canopy API response parsing. Field naming varies between their examples. */
+test('canopy prefers the numeric price value', () => {
+  assert.deepEqual(
+    extractCanopyPrice({ price: { value: 203.0, currency: 'USD', displayString: '$203.00' } }),
+    { value: 203, currency: 'USD' }
+  );
+});
+
+test('canopy falls back to the display string when there is no numeric value', () => {
+  assert.deepEqual(extractCanopyPrice({ price: { displayString: '$49.99' } }), {
+    value: 49.99,
+    currency: 'USD',
+  });
+  assert.deepEqual(extractCanopyPrice({ price: { display: '£1,234.56', currency: 'GBP' } }), {
+    value: 1234.56,
+    currency: 'GBP',
+  });
+});
+
+test('canopy reports no price rather than guessing one', () => {
+  assert.equal(extractCanopyPrice({}), null);
+  assert.equal(extractCanopyPrice({ price: {} }), null);
+  assert.equal(extractCanopyPrice({ price: { value: 0 } }), null);
+});
+
+test('canopy availability defaults to in stock unless told otherwise', () => {
+  assert.equal(canopyInStock({ availability: { status: 'IN_STOCK' } }), true);
+  assert.equal(canopyInStock({}), true, 'absent availability must not read as out of stock');
+  assert.equal(canopyInStock({ availability: { status: 'OUT_OF_STOCK' } }), false);
+  assert.equal(canopyInStock({ availability: { displayString: 'Currently unavailable' } }), false);
 });

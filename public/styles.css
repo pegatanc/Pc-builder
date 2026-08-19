@@ -283,6 +283,12 @@ td.num .delta {
   font-size: 11px;
 }
 
+.pill-owner {
+  background: rgba(90, 169, 255, 0.14);
+  border-color: rgba(90, 169, 255, 0.5);
+  color: #9ccbff;
+}
+
 .pill-low {
   background: rgba(155, 125, 255, 0.15);
   border-color: rgba(155, 125, 255, 0.45);

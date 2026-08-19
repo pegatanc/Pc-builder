@@ -9,11 +9,11 @@ const lastHit = new Map();
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-export function throttle(host, delayMs = 0) {
+export function throttle(host, delayMs = 0, floorMs) {
   const prev = hostChains.get(host) || Promise.resolve();
   const next = prev.then(async () => {
     const since = Date.now() - (lastHit.get(host) || 0);
-    const wait = Math.max(delayMs, minDelayMsPerHost) - since;
+    const wait = Math.max(delayMs, floorMs ?? minDelayMsPerHost) - since;
     if (wait > 0) await sleep(wait);
     lastHit.set(host, Date.now());
   });
@@ -28,7 +28,7 @@ export function throttle(host, delayMs = 0) {
  * Rate-limited fetch. Set `respectRobots: true` for anything that touches a
  * retail page — the request is refused outright if robots.txt disallows it.
  */
-export async function politeFetch(url, { respectRobots = false, headers = {}, ...init } = {}) {
+export async function politeFetch(url, { respectRobots = false, headers = {}, minDelayMs, ...init } = {}) {
   const target = new URL(url);
   let crawlDelayMs = 0;
 
@@ -42,9 +42,14 @@ export async function politeFetch(url, { respectRobots = false, headers = {}, ..
     crawlDelayMs = verdict.crawlDelayMs;
   }
 
+  // `minDelayMsPerHost` is sized for retail pages. A metered API is a different
+  // thing, so a source may ask for a shorter floor — but never a shorter one
+  // than robots.txt asked for on a host we are crawling.
+  const floor = minDelayMs == null ? undefined : Math.max(minDelayMs, crawlDelayMs);
+
   let lastError;
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    await throttle(target.host, crawlDelayMs);
+    await throttle(target.host, crawlDelayMs, floor);
     try {
       const res = await fetch(url, {
         ...init,

@@ -1,7 +1,7 @@
 {
   "$comment": "Tracker configuration. Target prices live under `targets` (keyed by part id from parts.json).",
   "currency": "USD",
-  "baselineTotal": 1315.0,
+  "baselineTotal": 1315,
   "schedule": {
     "cron": "0 */12 * * *",
     "timezone": "America/New_York",
@@ -14,6 +14,7 @@
   },
   "sources": {
     "order": [
+      "canopy",
       "paapi",
       "keepa",
       "bestbuy",
@@ -23,6 +24,7 @@
       "sample"
     ],
     "enabled": {
+      "canopy": true,
       "paapi": true,
       "keepa": true,
       "bestbuy": false,
@@ -40,14 +42,17 @@
     "amazonDomain": "www.amazon.com"
   },
   "targets": {
-    "cpu-ryzen-7-5700x": 150.0,
-    "mobo-msi-b550-tomahawk": 160.0,
-    "ram-ddr4-3600-cl16-32gb": 75.0,
-    "ssd-sk-hynix-p41-1tb": 80.0,
-    "psu-750w-gold-modular": 90.0,
-    "gpu-asrock-rx-7900-xt": 620.0,
-    "cooler-hyper-212-black": 35.0,
-    "case-nzxt-h6-flow": 95.0,
-    "fan-arctic-p12": 8.0
+    "cpu-ryzen-7-5700x": 150,
+    "mobo-msi-b550-tomahawk": 160,
+    "ram-ddr4-3600-cl16-32gb": 75,
+    "ssd-sk-hynix-p41-1tb": 80,
+    "psu-750w-gold-modular": 90,
+    "gpu-asrock-rx-7900-xt": 620,
+    "cooler-hyper-212-black": 35,
+    "case-nzxt-h6-flow": 95,
+    "fan-arctic-p12": 8
+  },
+  "site": {
+    "ownerKeyHash": "16fa03c82886432db543034d2a72e913d92e10061c430b3e18dffac09dcba10f"
   }
 }
