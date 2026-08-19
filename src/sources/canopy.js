@@ -5,11 +5,12 @@
  *   GET https://rest.canopyapi.co/api/amazon/product?asin=<ASIN>
  *   API-KEY: <key>
  *
- * The price object carries a numeric `value` alongside a formatted string, and
- * availability comes back as a status like "IN_STOCK". Field naming has varied
- * between the marketing examples and the docs (`display` vs `displayString`),
- * so the numeric value is preferred and the formatted string is only parsed as
- * a fallback.
+ * The REST endpoint returns a GraphQL-shaped envelope even though it is REST:
+ * the product sits under `data.amazonProduct`, not at the top level, and stock
+ * is a plain `isInStock` boolean rather than the `availability.status` object
+ * the published examples show. Both were confirmed against the live API. The
+ * unwrapping and the field lookups are written defensively so a future flattening
+ * of the response, or a rename back to the documented names, keeps working.
  *
  * Env: CANOPY_API_KEY
  */
@@ -21,9 +22,14 @@ const ENDPOINT = 'https://rest.canopyapi.co/api/amazon/product';
 // It's a paid API, not a retail page — the 5s scraping floor is inappropriate.
 const MIN_DELAY_MS = 250;
 
-/** Tolerates either the numeric field or the display string. */
+/** Unwraps the `data.amazonProduct` envelope, tolerating an already-flat payload. */
+export function product(payload) {
+  return payload?.data?.amazonProduct ?? payload?.amazonProduct ?? payload ?? null;
+}
+
+/** Tolerates the numeric field or any of the formatted-string spellings. */
 export function extractPrice(payload) {
-  const price = payload?.price;
+  const price = product(payload)?.price;
   if (!price) return null;
 
   const numeric = Number(price.value ?? price.amount);
@@ -35,9 +41,16 @@ export function extractPrice(payload) {
   return { value, currency: price.currency || 'USD' };
 }
 
-/** Absent availability is treated as in stock; only an explicit negative isn't. */
+/**
+ * The live API answers with a boolean; the documented shape is an availability
+ * object. Prefer the boolean, fall back to the object, and treat a payload that
+ * says nothing at all as in stock rather than silently zeroing the build.
+ */
 export function isInStock(payload) {
-  const status = payload?.availability?.status ?? payload?.availability?.displayString;
+  const item = product(payload);
+  if (typeof item?.isInStock === 'boolean') return item.isInStock;
+
+  const status = item?.availability?.status ?? item?.availability?.displayString;
   if (!status) return true;
   return !/OUT_OF_STOCK|UNAVAILABLE|out of stock|currently unavailable/i.test(String(status));
 }
@@ -88,7 +101,7 @@ export default {
           price_cents: 0,
           currency: 'USD',
           in_stock: 0,
-          url: payload?.url ?? listing.url ?? null,
+          url: product(payload)?.url ?? listing.url ?? null,
           observed_at: observedAt,
         });
         continue;
@@ -101,7 +114,7 @@ export default {
         price_cents: Math.round(price.value * 100),
         currency: price.currency,
         in_stock: isInStock(payload) ? 1 : 0,
-        url: payload?.url ?? listing.url ?? null,
+        url: product(payload)?.url ?? listing.url ?? null,
         observed_at: observedAt,
       });
     }
