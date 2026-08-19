@@ -12,6 +12,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -203,4 +204,41 @@ test('the price CLI rejects a nonsense amount', () => {
   const { status, output } = inSandbox(() => {}, ['src/set-price.js', 'cpu', 'free']);
   assert.equal(status, 1);
   assert.match(output, /not a valid price/);
+});
+
+/**
+ * Owner recognition. This is a marker, not access control — but the digest is
+ * published, so the key itself must never reach the repository.
+ */
+test('the owner key is stored as a digest, never in the clear', () => {
+  const config = JSON.parse(fs.readFileSync(path.join(ROOT, 'config/config.json'), 'utf8'));
+  const digest = config.site?.ownerKeyHash;
+  assert.ok(digest, 'no owner key configured');
+  assert.match(digest, /^[a-f0-9]{64}$/, 'must be a SHA-256 hex digest');
+});
+
+test('the owner-key CLI round-trips a key to its digest', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pc-owner-'));
+  const configDir = path.join(dir, 'config');
+  fs.cpSync(path.join(ROOT, 'config'), configDir, { recursive: true });
+  const env = { ...process.env, DATA_DIR: path.join(dir, 'data'), CONFIG_DIR: configDir };
+  const file = path.join(configDir, 'config.json');
+
+  const secret = 'a-long-enough-test-key-0001';
+  const expected = createHash('sha256').update(secret, 'utf8').digest('hex');
+
+  spawnSync(process.execPath, ['src/set-owner-key.js', secret], { cwd: ROOT, env });
+  const written = JSON.parse(fs.readFileSync(file, 'utf8'));
+  assert.equal(written.site.ownerKeyHash, expected);
+  assert.doesNotMatch(JSON.stringify(written), new RegExp(secret), 'key must not be stored in the clear');
+
+  spawnSync(process.execPath, ['src/set-owner-key.js', 'clear'], { cwd: ROOT, env });
+  assert.equal(JSON.parse(fs.readFileSync(file, 'utf8')).site?.ownerKeyHash, undefined);
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+test('a too-short owner key is refused, since the digest is public', () => {
+  const { status, output } = inSandbox(() => {}, ['--import', './src/lib/fatal.js', 'src/set-owner-key.js', 'abc']);
+  assert.equal(status, 1);
+  assert.match(output, /long and random/);
 });

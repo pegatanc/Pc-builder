@@ -24,7 +24,7 @@ app.get('/api/build', (req, res) => {
 });
 
 app.get('/api/sources', (req, res) => {
-  res.json({ sources: describeSources(), schedule: config.schedule });
+  res.json({ sources: describeSources(), schedule: config.schedule, site: config.site ?? {} });
 });
 
 app.post('/api/refresh', async (req, res) => {

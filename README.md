@@ -56,6 +56,7 @@ takes precedence over a fallback for the same retailer.
 
 | Source    | Retailer  | Cost                    | Needs                                                     |
 | --------- | --------- | ----------------------- | --------------------------------------------------------- |
+| `canopy`  | Amazon    | paid API                | `CANOPY_API_KEY` from [canopyapi.co](https://www.canopyapi.co/) |
 | `paapi`   | Amazon    | free, but gated         | Approved Associates account → `PAAPI_ACCESS_KEY`, `PAAPI_SECRET_KEY`, `PAAPI_PARTNER_TAG` |
 | `keepa`   | Amazon    | paid subscription       | `KEEPA_API_KEY`                                            |
 | `bestbuy` | Best Buy  | free                    | `BESTBUY_API_KEY` — **disabled by default** (US-only retailer) |
@@ -68,8 +69,22 @@ Copy `.env.example` to `.env` and run `node --env-file=.env src/server.js` to lo
 
 ### About Amazon
 
-Amazon has no free price API and blocks scrapers aggressively, so there are three
+Amazon has no free price API and blocks scrapers aggressively, so there are four
 honest ways to get its prices, in descending order of convenience:
+
+0. **Canopy API** (`canopy`) — a paid REST API, no affiliate account needed, works
+   as soon as you have a key. This is the default first choice in `sources.order`.
+
+   ```bash
+   CANOPY_API_KEY=… npm run fetch
+   ```
+
+   One request per ASIN against `rest.canopyapi.co/api/amazon/product`, keyed by an
+   `API-KEY` header. The numeric `price.value` is preferred and the formatted string
+   is only parsed as a fallback, since field naming differs between Canopy's examples
+   and their docs. A product with no Buy Box price is recorded as out of stock rather
+   than as an error. Being a metered API rather than a retail page, it uses a 250ms
+   floor between calls instead of the 5s one meant for scraping.
 
 1. **Product Advertising API v5** (`paapi`) — the official route. Free, but it
    requires an approved Associates account, and Amazon revokes access if the
@@ -310,6 +325,30 @@ to any part if you want it back. If you switch `amazonDomain`, remember to updat
 | CPU Cooler     | Cooler Master Hyper 212 Black (`B07H25DYM3`)   | $35    |
 | Case           | NZXT H6 Flow (`B0C89FCDFP`)                    | $95    |
 | Case Fan       | Arctic P12 (`B07GB16RK7`)                      | $8     |
+
+## Recognising your own copy
+
+`npm run owner-key <key>` records a personal key, and opening the site once with
+`?key=<key>` marks that browser — after which the header shows a `✓ your tracker`
+badge. The key is stripped from the address bar immediately so it doesn't linger in
+a screenshot or a copied URL.
+
+Only the SHA-256 digest goes into `config.json`; the key itself is never written to
+the repo. That matters because this repo is public, and a random UUID has enough
+entropy that publishing its digest doesn't disclose it.
+
+**This is a recognition marker, not access control, and it must not be mistaken for
+one.** The site is static, so there is no server to check anything against; the
+comparison happens in the visitor's own browser, and `build.json` is readable by
+anyone with the URL. It tells you that *you* opened your own link. It does not keep
+anybody out.
+
+If you need the data actually private, the options are a private repo on a paid plan
+(Pages then serves it, though the published site is still public), or not publishing
+at all and running `npm start` locally.
+
+`npm run owner-key` with no arguments shows the current state; `npm run owner-key
+clear` removes it.
 
 ## Reading the table
 

@@ -16,7 +16,8 @@
     "site": "node src/export-static.js",
     "history:import": "node --import ./src/lib/fatal.js src/history.js import",
     "history:export": "node --import ./src/lib/fatal.js src/history.js export",
-    "price": "node src/set-price.js"
+    "price": "node src/set-price.js",
+    "owner-key": "node src/set-owner-key.js"
   },
   "dependencies": {
     "better-sqlite3": "^11.5.0",

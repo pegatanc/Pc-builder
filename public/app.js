@@ -273,7 +273,71 @@ function paintSortHeaders() {
   }
 }
 
+/* ---------- owner recognition ---------- */
+
+/*
+ * Recognises a personal key so the page can say "this is your tracker".
+ *
+ * It is NOT access control and must not be mistaken for it. The site is static
+ * on public hosting, so there is no server to check anything against, the data
+ * in build.json is readable by anyone, and this comparison happens in the
+ * visitor's own browser. What it buys you is confirmation that you opened your
+ * own link, nothing more.
+ *
+ * Only the SHA-256 digest is published — the key itself is never in the repo.
+ */
+const OWNER_FLAG = 'pc-tracker-owner';
+
+async function sha256Hex(value) {
+  // crypto.subtle needs a secure context: HTTPS or localhost, not plain-HTTP LAN.
+  if (!window.isSecureContext || !crypto?.subtle) return null;
+  const bytes = new TextEncoder().encode(value);
+  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function recogniseOwner(expectedHash) {
+  if (!expectedHash) return false;
+
+  const params = new URLSearchParams(location.search);
+  const key = params.get('key');
+
+  if (key) {
+    const digest = await sha256Hex(key);
+    if (digest && digest === expectedHash) {
+      try {
+        localStorage.setItem(OWNER_FLAG, digest);
+      } catch {
+        /* private mode — recognised for this page view only */
+      }
+    }
+    // Drop the key from the address bar either way, so it is not left sitting
+    // in a shared screenshot or copied out of the URL.
+    params.delete('key');
+    const query = params.toString();
+    history.replaceState(null, '', location.pathname + (query ? `?${query}` : '') + location.hash);
+    if (digest && digest === expectedHash) return true;
+  }
+
+  try {
+    return localStorage.getItem(OWNER_FLAG) === expectedHash;
+  } catch {
+    return false;
+  }
+}
+
+function renderOwnerBadge(recognised) {
+  const slot = document.getElementById('owner-badge');
+  if (!slot) return;
+  slot.hidden = !recognised;
+  if (recognised) {
+    slot.textContent = '✓ your tracker';
+    slot.title = 'This browser presented the owner key. A recognition marker, not access control.';
+  }
+}
+
 /* ---------- copy all links ---------- */
+
 
 /**
  * One line per part, in the order currently displayed, as "Name — url".
@@ -678,6 +742,7 @@ async function load() {
   renderTable(data);
   renderMeta(data, sourceInfo.sources);
   applyMode(data);
+  renderOwnerBadge(await recogniseOwner(sourceInfo.site?.ownerKeyHash));
 }
 
 /** In the static build there is no refresh endpoint, so don't offer one. */

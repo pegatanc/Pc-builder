@@ -65,6 +65,7 @@ const defaults = {
     http: { userAgent: 'pc-builder-price-tracker/1.0', minDelayMsPerHost: 5000, timeoutMs: 15000, maxRetries: 2 },
   },
   targets: {},
+  site: {},
 };
 
 export function loadConfig() {
@@ -81,6 +82,7 @@ export function loadConfig() {
       http: { ...defaults.sources.http, ...raw.sources?.http },
     },
     targets: { ...defaults.targets, ...raw.targets },
+    site: { ...defaults.site, ...raw.site },
   };
 }
 
