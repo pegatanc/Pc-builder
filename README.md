@@ -342,6 +342,12 @@ to any part if you want it back. If you switch `amazonDomain`, remember to updat
 
 ## Recognising your own copy
 
+**Use a value generated for this and nothing else** — not an API key, not a password:
+
+```bash
+npm run owner-key "$(uuidgen)"    # never leaves your machine
+```
+
 `npm run owner-key <key>` records a personal key, and opening the site once with
 `?key=<key>` marks that browser — after which the header shows a `✓ your tracker`
 badge. The key is stripped from the address bar immediately so it doesn't linger in

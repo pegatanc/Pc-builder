@@ -210,11 +210,27 @@ test('the price CLI rejects a nonsense amount', () => {
  * Owner recognition. This is a marker, not access control — but the digest is
  * published, so the key itself must never reach the repository.
  */
-test('the owner key is stored as a digest, never in the clear', () => {
+test('any configured owner key is a digest, never the key in the clear', () => {
+  // Unset is a valid state — the feature is opt-in. What must never happen is a
+  // readable secret sitting in a config file that ships to a public repo.
   const config = JSON.parse(fs.readFileSync(path.join(ROOT, 'config/config.json'), 'utf8'));
   const digest = config.site?.ownerKeyHash;
-  assert.ok(digest, 'no owner key configured');
-  assert.match(digest, /^[a-f0-9]{64}$/, 'must be a SHA-256 hex digest');
+  if (digest === undefined) return;
+  assert.match(digest, /^[a-f0-9]{64}$/, 'must be a SHA-256 hex digest, not a key');
+});
+
+test('no credential-shaped value is committed anywhere in config', () => {
+  // An API key pasted into config instead of .env is the mistake this catches.
+  for (const name of ['config.json', 'parts.json', 'manual-prices.json']) {
+    const file = path.join(ROOT, 'config', name);
+    if (!fs.existsSync(file)) continue;
+    const text = fs.readFileSync(file, 'utf8');
+    assert.doesNotMatch(
+      text,
+      /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/i,
+      `${name} contains a UUID — credentials belong in .env or repo secrets`
+    );
+  }
 });
 
 test('the owner-key CLI round-trips a key to its digest', () => {
