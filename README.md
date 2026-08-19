@@ -80,11 +80,25 @@ honest ways to get its prices, in descending order of convenience:
    ```
 
    One request per ASIN against `rest.canopyapi.co/api/amazon/product`, keyed by an
-   `API-KEY` header. The numeric `price.value` is preferred and the formatted string
-   is only parsed as a fallback, since field naming differs between Canopy's examples
-   and their docs. A product with no Buy Box price is recorded as out of stock rather
-   than as an error. Being a metered API rather than a retail page, it uses a 250ms
-   floor between calls instead of the 5s one meant for scraping.
+   `API-KEY` header.
+
+   **The live response does not match the published examples.** It comes back in a
+   GraphQL-shaped envelope even on the REST endpoint — the product sits under
+   `data.amazonProduct`, not at the top level — and stock is a plain `isInStock`
+   boolean rather than an `availability.status` object. The adapter unwraps the
+   envelope and prefers the boolean, while still accepting the documented shapes, so
+   it survives either. The test fixtures are captured from real responses for this
+   reason.
+
+   The numeric `price.value` is preferred, with the formatted string parsed only as a
+   fallback. A product with no price is recorded as out of stock rather than as an
+   error. Being a metered API rather than a retail page, it uses a 250ms floor between
+   calls instead of the 5s one meant for scraping; Canopy exposes no rate-limit
+   headers, so that figure is a conservative default rather than a tuned one.
+
+   The key belongs in `.env` locally and in a `CANOPY_API_KEY` repository secret for
+   the Pages workflow. It must never be committed — unlike `manual-prices.json`, this
+   is a credential, and this repository is public.
 
 1. **Product Advertising API v5** (`paapi`) — the official route. Free, but it
    requires an approved Associates account, and Amazon revokes access if the

@@ -8,6 +8,7 @@ import { loadParts } from '../src/config.js';
 import {
   extractPrice as extractCanopyPrice,
   isInStock as canopyInStock,
+  product as canopyProduct,
 } from '../src/sources/canopy.js';
 
 /**
@@ -180,34 +181,65 @@ test('every seeded part resolves to a link, and none point at Best Buy', () => {
   }
 });
 
-/** Canopy API response parsing. Field naming varies between their examples. */
-test('canopy prefers the numeric price value', () => {
-  assert.deepEqual(
-    extractCanopyPrice({ price: { value: 203.0, currency: 'USD', displayString: '$203.00' } }),
-    { value: 203, currency: 'USD' }
-  );
+/**
+ * Canopy API response parsing.
+ *
+ * These fixtures are the *live* response shape, captured from the real endpoint,
+ * not the one in the published examples. The first version of this adapter was
+ * written to the docs — flat payload, `availability.status` — and its tests
+ * passed while the adapter silently returned no price for every part, because
+ * the tests encoded the same wrong assumption. Keep these fixtures honest.
+ */
+const LIVE_RESPONSE = {
+  data: {
+    amazonProduct: {
+      title: 'AMD Ryzen 7 5700X 8-Core, 16-Thread Unlocked Desktop Processor',
+      brand: 'AMD',
+      asin: 'B09VCHQHZ6',
+      url: 'https://www.amazon.com/clp/B09VCHQHZ6',
+      isInStock: true,
+      price: { symbol: '$', value: 208.99, currency: 'USD', display: '$208.99' },
+    },
+  },
+};
+
+test('canopy reads a price out of the real data.amazonProduct envelope', () => {
+  assert.deepEqual(extractCanopyPrice(LIVE_RESPONSE), { value: 208.99, currency: 'USD' });
+  assert.equal(canopyInStock(LIVE_RESPONSE), true);
+  assert.equal(canopyProduct(LIVE_RESPONSE).asin, 'B09VCHQHZ6');
 });
 
-test('canopy falls back to the display string when there is no numeric value', () => {
-  assert.deepEqual(extractCanopyPrice({ price: { displayString: '$49.99' } }), {
+test('canopy honours the isInStock boolean the live API returns', () => {
+  const out = { data: { amazonProduct: { isInStock: false, price: { value: 10, currency: 'USD' } } } };
+  assert.equal(canopyInStock(out), false);
+});
+
+test('canopy still handles a flat payload and the documented availability object', () => {
+  assert.deepEqual(extractCanopyPrice({ price: { value: 49.99, currency: 'USD' } }), {
     value: 49.99,
     currency: 'USD',
   });
-  assert.deepEqual(extractCanopyPrice({ price: { display: '£1,234.56', currency: 'GBP' } }), {
-    value: 1234.56,
-    currency: 'GBP',
+  assert.equal(canopyInStock({ availability: { status: 'OUT_OF_STOCK' } }), false);
+  assert.equal(canopyInStock({ availability: { status: 'IN_STOCK' } }), true);
+});
+
+test('canopy falls back to the formatted string when there is no numeric value', () => {
+  assert.deepEqual(
+    extractCanopyPrice({ data: { amazonProduct: { price: { display: '£1,234.56', currency: 'GBP' } } } }),
+    { value: 1234.56, currency: 'GBP' }
+  );
+  assert.deepEqual(extractCanopyPrice({ price: { displayString: '$49.99' } }), {
+    value: 49.99,
+    currency: 'USD',
   });
 });
 
 test('canopy reports no price rather than guessing one', () => {
   assert.equal(extractCanopyPrice({}), null);
-  assert.equal(extractCanopyPrice({ price: {} }), null);
-  assert.equal(extractCanopyPrice({ price: { value: 0 } }), null);
+  assert.equal(extractCanopyPrice({ data: { amazonProduct: {} } }), null);
+  assert.equal(extractCanopyPrice({ data: { amazonProduct: { price: { value: 0 } } } }), null);
 });
 
-test('canopy availability defaults to in stock unless told otherwise', () => {
-  assert.equal(canopyInStock({ availability: { status: 'IN_STOCK' } }), true);
-  assert.equal(canopyInStock({}), true, 'absent availability must not read as out of stock');
-  assert.equal(canopyInStock({ availability: { status: 'OUT_OF_STOCK' } }), false);
-  assert.equal(canopyInStock({ availability: { displayString: 'Currently unavailable' } }), false);
+test('canopy treats a payload with no stock signal at all as in stock', () => {
+  assert.equal(canopyInStock({ data: { amazonProduct: { price: { value: 5 } } } }), true);
 });
