@@ -59,12 +59,13 @@ const upsertPart = db.prepare(`
 `);
 
 const upsertListing = db.prepare(`
-  INSERT INTO listings (part_id, retailer, asin, sku, query, url, allow_html)
-  VALUES (@part_id, @retailer, @asin, @sku, @query, @url, @allow_html)
+  INSERT INTO listings (part_id, retailer, asin, sku, query, alt_query, url, allow_html)
+  VALUES (@part_id, @retailer, @asin, @sku, @query, @alt_query, @url, @allow_html)
   ON CONFLICT(part_id, retailer) DO UPDATE SET
     asin = excluded.asin,
     sku = excluded.sku,
     query = excluded.query,
+    alt_query = excluded.alt_query,
     url = excluded.url,
     allow_html = excluded.allow_html
 `);
@@ -93,6 +94,7 @@ export function seed({ log = console.log } = {}) {
           asin: listing.asin ?? null,
           sku: listing.sku ?? null,
           query: listing.query ?? null,
+          alt_query: listing.altQuery ?? null,
           // Derived when not given, so every part is clickable in the UI.
           url: listingUrl(listing, { amazonDomain: config.sources.amazonDomain }),
           allow_html: listing.allowHtml ? 1 : 0,

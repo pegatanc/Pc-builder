@@ -12,6 +12,17 @@
     "windowDays": 30,
     "minSamples": 3
   },
+  "alternatives": {
+    "enabled": true,
+    "perPart": 5,
+    "refreshDays": 7,
+    "minRating": 4.0,
+    "minReviews": 50,
+    "priceBand": [
+      0.4,
+      2.5
+    ]
+  },
   "sources": {
     "order": [
       "canopy",

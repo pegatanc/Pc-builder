@@ -6,6 +6,8 @@ plain HTML/CSS/JS on the front (no framework, no build step, no auth, localhost 
 Tracks the cheapest current price per part across retailers, keeps full price
 history in SQLite, draws a canvas sparkline per part, totals the build against a
 **$1,315 baseline**, and flags any part that drops 10%+ below its own 30-day average.
+It also suggests **alternatives for each part** — other products that fill the same
+slot — so a part sitting over target becomes a decision rather than just a red number.
 
 ## Run it
 
@@ -31,6 +33,7 @@ npm run fetch     # fetch prices once and exit
 npm run seed      # re-sync config/parts.json into the database
 npm run price     # list manual prices; `npm run price cpu 148.99` sets one
 npm run site      # build the static site into ./site (see GitHub Pages below)
+npm run alternatives  # refresh per-part suggestions; `dry` previews, `force` ignores staleness
 npm test          # robots.txt precedence, price parsing, history round-trip
 ```
 
@@ -302,6 +305,8 @@ Worth knowing:
   "baselineTotal": 1315.00,
   "schedule": { "cron": "0 */12 * * *", "timezone": "America/New_York", "runOnStart": true },
   "alerts":   { "dropPercent": 10, "windowDays": 30, "minSamples": 3 },
+  "alternatives": { "enabled": true, "perPart": 5, "refreshDays": 7,
+                    "minRating": 4.0, "minReviews": 50, "priceBand": [0.4, 2.5] },
   "targets":  { "cpu-ryzen-7-5700x": 150.00, "gpu-asrock-rx-7900-xt": 620.00 }
 }
 ```
@@ -325,6 +330,52 @@ Best Buy is disabled by default, being US-only. Re-enable it in
 `sources.enabled.bestbuy` and add a `{ "retailer": "Best Buy", "query": "..." }` listing
 to any part if you want it back. If you switch `amazonDomain`, remember to update
 `currency`, `baselineTotal` and the `targets`, and set `KEEPA_DOMAIN` to match.
+
+## Part alternatives
+
+Each part can carry a short list of alternatives — other products that would fill the
+same slot — discovered through Canopy's Amazon search. In the table, a part with
+suggestions shows a `▸ 5 alternatives · 2 cheaper` control; opening it lists each one
+with its price, the difference against your current pick, and its rating.
+
+They are **suggestions, not tracked parts**. Nothing about them is verified against your
+build: search cannot tell a 750W ATX 3.1 unit from a 750W SFX one, or a DDR4 kit from a
+DDR5 one. Check the specification before buying — the panel says so too.
+
+**Cost.** One search returns roughly 26 products for the same ~$0.01 as a single product
+lookup, so discovery costs **one request per part, not one per alternative** — there is a
+test asserting exactly that, because the whole argument rests on it. A part is only
+re-searched once its snapshot is older than `refreshDays` (default 7), which works out at
+about 40 requests a month for nine parts (~$0.40) on top of the ~$5.40/mo the price fetch
+itself costs. Set `alternatives.enabled` to `false` to stop spending entirely.
+
+**Tuning.** `npm run alternatives dry` runs a search for every part and prints what came
+back **without writing anything** — the way to check relevance before trusting the
+filters. What the filter drops:
+
+- sponsored results (in practice they duplicate organic hits further down the page)
+- the ASINs you already track, and duplicates within one response
+- anything rated under `minRating`, or with fewer than `minReviews` ratings — an unrated
+  listing is indistinguishable from a bad one
+- anything outside `priceBand` × a reference price, which throws out the cables and
+  single sticks that cluster far below what the part actually costs
+
+That reference is the part's **current tracked price**, and failing that the **median of
+the results themselves** — deliberately never the configured target. A target is a wish,
+and a stale one silently suppresses everything: the $75 target for 32GB DDR4-3600 rejected
+every real kit on the page, all of which now sit at $179–$250 with DDR4 end-of-life.
+
+When a part's tracking query makes a poor search — an exact-product query mostly returns
+the same item back — give its listing an `altQuery` in `config/parts.json` to search on
+different terms:
+
+```jsonc
+{ "retailer": "Amazon", "query": "SK hynix Platinum P41 1TB",
+  "altQuery": "1TB NVMe M.2 PCIe 4.0 internal SSD" }
+```
+
+Alternatives ride into `build.json` with everything else, so the published static site
+gets them at no extra cost.
 
 ## The build
 
@@ -387,6 +438,8 @@ clear` removes it.
 - **Lowest seen** — the cheapest that part has been in the tracked window, with how
   far above it the current price sits. A part matching its own record gets a
   `★ lowest yet` badge; the footer shows the cheapest the whole build has ever been.
+- **Alternatives** — parts with suggestions carry a disclosure under the name; it
+  expands a list beneath the row, cheapest first, and stays open until you close it.
 - **Status** — `▼ n% drop` when the alert rule fires, `at target` when at or below
   the configured target, `stale` when the last observation is over a week old.
 
@@ -420,6 +473,7 @@ src/
   scheduler.js  node-cron job
   fetcher.js    runs sources, dedupes, writes history
   repo.js       queries: cheapest offer, daily series, 30-day stats, alerts
+  alternatives.js  Canopy search → filter → weekly snapshot per part
   db.js         schema + connection
   sources/      paapi · keepa · bestbuy · jsonld · browser · manual · sample
   lib/          robots.js (robots.txt) · http.js (rate-limited fetch) · price.js (price parsing)
@@ -429,7 +483,8 @@ public/       index.html · app.js (canvas sparklines) · styles.css
 data/         prices.db — disposable, gitignored, rebuilt from history/ on demand
 history/      price-history.ndjson — the committed record, deliberately outside data/
               so `rm -rf data` to reset the database cannot take the history with it
-.github/      workflows/prices.yml — 12h fetch, commit history, publish to Pages
+.github/      workflows/prices.yml — 12h fetch, weekly alternatives, commit history,
+              publish to Pages
 ```
 
 Delete `data/prices.db` to start over.

@@ -1,0 +1,180 @@
+{
+  "data": {
+    "amazonProductSearchResults": {
+      "productResults": {
+        "results": [
+          {
+            "sponsored": true,
+            "title": "be quiet! Pure Power 13 M 750W, ATX 3.1, Fully Modular PSU, 80+ Gold | PCIe 5.1 Ready Power Supply, Up to 94.4% Efficiency, LLC Topology, Semi-Passive 120mm fan, 12V-2x6 600W, 10 Year Warranty",
+            "url": "https://www.amazon.com/sspa/click?ie=UTF8&spc=MToyMzE2Mjg3MjQzODI2MzI2OjE3ODcxNzQyMTA6c3BfYXRmOjMwMDgwMzU3NjIxODIwMjo6MDo6&url=%2Fquiet-Pure-Power-Fully-Modular%2Fdp%2FB0FBX9VS3B%2Fref%3Dsr_1_1_sspa%3Fdib%3DeyJ2IjoiMSJ9.UCS0BguIYP0T_oPyfh6JYiZNMklVKl6tXKUCS9RlUUjaQJ-lLdzTaqUd58P0YE1W20O3z37wX74wfdn0JFPESuHPREH_mP6ScvG1bLYR7GnI_4KxIRUd815KNk1d_Q-0L7luRMHDaSuZwNXvuGWFFwN0NikWrEgjekOeKDyeRUJscacXQgp6t5N40XyB92DV7tPxS2y4ONEuuLQN3Z9A1H_5mUa4vXav7f0fWh5wcdQ.nw4EhkyC1PY222R0JNyfA17_4nxmQpKy5fyjZRIy-j8%26dib_tag%3Dse%26keywords%3D750W%2B80%252B%2BGold%2Bfully%2Bmodular%2Bpower%2Bsupply%26qid%3D1787174210%26sr%3D8-1-spons%26sp_csd%3Dd2lkZ2V0TmFtZT1zcF9hdGY%26psc%3D1",
+            "asin": "B0FBX9VS3B",
+            "price": {
+              "symbol": "$",
+              "value": 89.9,
+              "currency": "USD",
+              "display": "$89.90"
+            },
+            "mainImageUrl": "https://m.media-amazon.com/images/I/71uZg195moL._AC_UY218_.jpg",
+            "rating": 4.6,
+            "ratingsTotal": 155,
+            "isPrime": false,
+            "coupon": null
+          },
+          {
+            "sponsored": true,
+            "title": "ASUS Prime 750W Gold (750 Watt, ATX 3.1 Compatible, Fully Modular Power Supply, 80+ Gold Certified, Dual Ball Bearings, Two Color Options in One, 8-Year Warranty)",
+            "url": "https://www.amazon.com/sspa/click?ie=UTF8&spc=MToyMzE2Mjg3MjQzODI2MzI2OjE3ODcxNzQyMTA6c3BfYXRmOjMwMTM4OTkwODc5NTMwMjo6MDo6&url=%2FASUS-Compatible-Certified-Bearings-Warranty%2Fdp%2FB0CPR1FR7H%2Fref%3Dsr_1_2_sspa%3Fdib%3DeyJ2IjoiMSJ9.UCS0BguIYP0T_oPyfh6JYiZNMklVKl6tXKUCS9RlUUjaQJ-lLdzTaqUd58P0YE1W20O3z37wX74wfdn0JFPESuHPREH_mP6ScvG1bLYR7GnI_4KxIRUd815KNk1d_Q-0L7luRMHDaSuZwNXvuGWFFwN0NikWrEgjekOeKDyeRUJscacXQgp6t5N40XyB92DV7tPxS2y4ONEuuLQN3Z9A1H_5mUa4vXav7f0fWh5wcdQ.nw4EhkyC1PY222R0JNyfA17_4nxmQpKy5fyjZRIy-j8%26dib_tag%3Dse%26keywords%3D750W%2B80%252B%2BGold%2Bfully%2Bmodular%2Bpower%2Bsupply%26qid%3D1787174210%26sr%3D8-2-spons%26sp_csd%3Dd2lkZ2V0TmFtZT1zcF9hdGY%26psc%3D1",
+            "asin": "B0CPR1FR7H",
+            "price": {
+              "symbol": "$",
+              "value": 89.99,
+              "currency": "USD",
+              "display": "$89.99"
+            },
+            "mainImageUrl": "https://m.media-amazon.com/images/I/717mXxH8VAL._AC_UY218_.jpg",
+            "rating": 4.8,
+            "ratingsTotal": 184,
+            "isPrime": false,
+            "coupon": null
+          },
+          {
+            "sponsored": false,
+            "title": "MSI MAG A750GL PCIE5, Fully Modular Compact Gaming 750W Power Supply, 80+ Gold, ATX 3.1 & PCIe 5.1 Ready, Native Dual-Color 12V-2x6 Cable, 10 Year Warranty",
+            "url": "https://www.amazon.com/MSI-MAG-A750GL-Gaming-Supply/dp/B0CC3QBGDL/ref=sr_1_3?dib=eyJ2IjoiMSJ9.UCS0BguIYP0T_oPyfh6JYiZNMklVKl6tXKUCS9RlUUjaQJ-lLdzTaqUd58P0YE1W20O3z37wX74wfdn0JFPESuHPREH_mP6ScvG1bLYR7GnI_4KxIRUd815KNk1d_Q-0L7luRMHDaSuZwNXvuGWFFwN0NikWrEgjekOeKDyeRUJscacXQgp6t5N40XyB92DV7tPxS2y4ONEuuLQN3Z9A1H_5mUa4vXav7f0fWh5wcdQ.nw4EhkyC1PY222R0JNyfA17_4nxmQpKy5fyjZRIy-j8&dib_tag=se&keywords=750W+80%2B+Gold+fully+modular+power+supply&qid=1787174210&sr=8-3",
+            "asin": "B0CC3QBGDL",
+            "price": {
+              "symbol": "$",
+              "value": 89.99,
+              "currency": "USD",
+              "display": "$89.99"
+            },
+            "mainImageUrl": "https://m.media-amazon.com/images/I/716c-SjLwPL._AC_UY218_.jpg",
+            "rating": 4.6,
+            "ratingsTotal": 1384,
+            "isPrime": false,
+            "coupon": null
+          },
+          {
+            "sponsored": false,
+            "title": "be quiet! Pure Power 13 M 750W, ATX 3.1, Fully Modular PSU, 80+ Gold | PCIe 5.1 Ready Power Supply, Up to 94.4% Efficiency, LLC Topology, Semi-Passive 120mm fan, 12V-2x6 600W, 10 Year Warranty",
+            "url": "https://www.amazon.com/quiet-Pure-Power-Fully-Modular/dp/B0FBX9VS3B/ref=sr_1_4?dib=eyJ2IjoiMSJ9.UCS0BguIYP0T_oPyfh6JYiZNMklVKl6tXKUCS9RlUUjaQJ-lLdzTaqUd58P0YE1W20O3z37wX74wfdn0JFPESuHPREH_mP6ScvG1bLYR7GnI_4KxIRUd815KNk1d_Q-0L7luRMHDaSuZwNXvuGWFFwN0NikWrEgjekOeKDyeRUJscacXQgp6t5N40XyB92DV7tPxS2y4ONEuuLQN3Z9A1H_5mUa4vXav7f0fWh5wcdQ.nw4EhkyC1PY222R0JNyfA17_4nxmQpKy5fyjZRIy-j8&dib_tag=se&keywords=750W+80%2B+Gold+fully+modular+power+supply&qid=1787174210&sr=8-4",
+            "asin": "B0FBX9VS3B",
+            "price": {
+              "symbol": "$",
+              "value": 89.9,
+              "currency": "USD",
+              "display": "$89.90"
+            },
+            "mainImageUrl": "https://m.media-amazon.com/images/I/71uZg195moL._AC_UY218_.jpg",
+            "rating": 4.6,
+            "ratingsTotal": 155,
+            "isPrime": false,
+            "coupon": null
+          },
+          {
+            "sponsored": false,
+            "title": "Thermaltake GF1 Fully Modular ATX 750W Power Supply - 80 Plus Gold - Ultra Quiet - Zero RPM, PS-TPD-0750FNFAGU-P",
+            "url": "https://www.amazon.com/Thermaltake-Fully-Modular-Power-Supply/dp/B0CKY716F9/ref=sr_1_5?dib=eyJ2IjoiMSJ9.UCS0BguIYP0T_oPyfh6JYiZNMklVKl6tXKUCS9RlUUjaQJ-lLdzTaqUd58P0YE1W20O3z37wX74wfdn0JFPESuHPREH_mP6ScvG1bLYR7GnI_4KxIRUd815KNk1d_Q-0L7luRMHDaSuZwNXvuGWFFwN0NikWrEgjekOeKDyeRUJscacXQgp6t5N40XyB92DV7tPxS2y4ONEuuLQN3Z9A1H_5mUa4vXav7f0fWh5wcdQ.nw4EhkyC1PY222R0JNyfA17_4nxmQpKy5fyjZRIy-j8&dib_tag=se&keywords=750W+80%2B+Gold+fully+modular+power+supply&qid=1787174210&sr=8-5",
+            "asin": "B0CKY716F9",
+            "price": {
+              "symbol": "$",
+              "value": 82.99,
+              "currency": "USD",
+              "display": "$82.99"
+            },
+            "mainImageUrl": "https://m.media-amazon.com/images/I/71V6+frcgQL._AC_UY218_.jpg",
+            "rating": 4.6,
+            "ratingsTotal": 334,
+            "isPrime": false,
+            "coupon": null
+          },
+          {
+            "sponsored": false,
+            "title": "CORSAIR RM750e ATX 3.1 PCIe 5.1 Ready Fully Modular 750W Power Supply – 12V-2x6 Cable Included, Cybenetics Gold Efficiency, 105°C-Rated Capacitors, Modern Standby Mode – Black",
+            "url": "https://www.amazon.com/CORSAIR-RM750e-Ready-Modular-Supply/dp/B0FLFGGDK3/ref=sr_1_6?dib=eyJ2IjoiMSJ9.UCS0BguIYP0T_oPyfh6JYiZNMklVKl6tXKUCS9RlUUjaQJ-lLdzTaqUd58P0YE1W20O3z37wX74wfdn0JFPESuHPREH_mP6ScvG1bLYR7GnI_4KxIRUd815KNk1d_Q-0L7luRMHDaSuZwNXvuGWFFwN0NikWrEgjekOeKDyeRUJscacXQgp6t5N40XyB92DV7tPxS2y4ONEuuLQN3Z9A1H_5mUa4vXav7f0fWh5wcdQ.nw4EhkyC1PY222R0JNyfA17_4nxmQpKy5fyjZRIy-j8&dib_tag=se&keywords=750W+80%2B+Gold+fully+modular+power+supply&qid=1787174210&sr=8-6",
+            "asin": "B0FLFGGDK3",
+            "price": {
+              "symbol": "$",
+              "value": 89.99,
+              "currency": "USD",
+              "display": "$89.99"
+            },
+            "mainImageUrl": "https://m.media-amazon.com/images/I/71ifAJ6M-uL._AC_UY218_.jpg",
+            "rating": 4.7,
+            "ratingsTotal": 374,
+            "isPrime": false,
+            "coupon": null
+          },
+          {
+            "sponsored": true,
+            "title": "GAMEMAX 750W Fully Modular ARGB Power Supply, ATX3.0 & PCIE 5.0, 80 Plus Gold Certified, 105°C Japanese Caps, ATX Gaming Power Supply",
+            "url": "https://www.amazon.com/sspa/click?ie=UTF8&spc=MToyMzE2Mjg3MjQzODI2MzI2OjE3ODcxNzQyMTA6c3BfbXRmOjMwMDAzMDEwOTI4NzgwMjo6MDo6&url=%2FGAMEMAX-Modular-Supply-Certified-Japanese%2Fdp%2FB0C6T6XB36%2Fref%3Dsr_1_7_sspa%3Fdib%3DeyJ2IjoiMSJ9.UCS0BguIYP0T_oPyfh6JYiZNMklVKl6tXKUCS9RlUUjaQJ-lLdzTaqUd58P0YE1W20O3z37wX74wfdn0JFPESuHPREH_mP6ScvG1bLYR7GnI_4KxIRUd815KNk1d_Q-0L7luRMHDaSuZwNXvuGWFFwN0NikWrEgjekOeKDyeRUJscacXQgp6t5N40XyB92DV7tPxS2y4ONEuuLQN3Z9A1H_5mUa4vXav7f0fWh5wcdQ.nw4EhkyC1PY222R0JNyfA17_4nxmQpKy5fyjZRIy-j8%26dib_tag%3Dse%26keywords%3D750W%2B80%252B%2BGold%2Bfully%2Bmodular%2Bpower%2Bsupply%26qid%3D1787174210%26sr%3D8-7-spons%26sp_csd%3Dd2lkZ2V0TmFtZT1zcF9tdGY%26psc%3D1",
+            "asin": "B0C6T6XB36",
+            "price": {
+              "symbol": "$",
+              "value": 76.99,
+              "currency": "USD",
+              "display": "$76.99"
+            },
+            "mainImageUrl": "https://m.media-amazon.com/images/I/81DlwsvmCbL._AC_UY218_.jpg",
+            "rating": 4.2,
+            "ratingsTotal": 153,
+            "isPrime": false,
+            "coupon": null
+          },
+          {
+            "sponsored": false,
+            "title": "SAMA GT750 750W Gold ATX 3.1 PCIe 5.1 Fully Modular Power Supply, Black | 80 PLUS Gold Certified,Cybenetics Gold Rated,Japanese Capacitors,PCIe 5.1 (450W),12V-2x6,ECO Silent Fan,750W Gaming PSU",
+            "url": "https://www.amazon.com/SAMA-Black-750W-Power-Supply/dp/B0DM2HP39G/ref=sr_1_8?dib=eyJ2IjoiMSJ9.UCS0BguIYP0T_oPyfh6JYiZNMklVKl6tXKUCS9RlUUjaQJ-lLdzTaqUd58P0YE1W20O3z37wX74wfdn0JFPESuHPREH_mP6ScvG1bLYR7GnI_4KxIRUd815KNk1d_Q-0L7luRMHDaSuZwNXvuGWFFwN0NikWrEgjekOeKDyeRUJscacXQgp6t5N40XyB92DV7tPxS2y4ONEuuLQN3Z9A1H_5mUa4vXav7f0fWh5wcdQ.nw4EhkyC1PY222R0JNyfA17_4nxmQpKy5fyjZRIy-j8&dib_tag=se&keywords=750W+80%2B+Gold+fully+modular+power+supply&qid=1787174210&sr=8-8",
+            "asin": "B0DM2HP39G",
+            "price": {
+              "symbol": "$",
+              "value": 69.99,
+              "currency": "USD",
+              "display": "$69.99"
+            },
+            "mainImageUrl": "https://m.media-amazon.com/images/I/71nmq29d8bL._AC_UY218_.jpg",
+            "rating": 4.7,
+            "ratingsTotal": 58,
+            "isPrime": false,
+            "coupon": null
+          },
+          {
+            "sponsored": false,
+            "title": "Cooler Master MWE Gold 750 V3 Power Supply, PCIe 5.1 Ready | Certification Cybenetics Platinum & Noise A, 80 PLUS Gold, 750W, ATX 3.1, 12V-2x6 Cable, Zero-RPM Silent Mode, Fully Modular",
+            "url": "https://www.amazon.com/Cooler-Master-Efficiency-Zero-RPM-Hexagonal/dp/B0D68TLYKR/ref=sr_1_9?dib=eyJ2IjoiMSJ9.UCS0BguIYP0T_oPyfh6JYiZNMklVKl6tXKUCS9RlUUjaQJ-lLdzTaqUd58P0YE1W20O3z37wX74wfdn0JFPESuHPREH_mP6ScvG1bLYR7GnI_4KxIRUd815KNk1d_Q-0L7luRMHDaSuZwNXvuGWFFwN0NikWrEgjekOeKDyeRUJscacXQgp6t5N40XyB92DV7tPxS2y4ONEuuLQN3Z9A1H_5mUa4vXav7f0fWh5wcdQ.nw4EhkyC1PY222R0JNyfA17_4nxmQpKy5fyjZRIy-j8&dib_tag=se&keywords=750W+80%2B+Gold+fully+modular+power+supply&qid=1787174210&sr=8-9",
+            "asin": "B0D68TLYKR",
+            "price": {
+              "symbol": "$",
+              "value": 84.98,
+              "currency": "USD",
+              "display": "$84.98"
+            },
+            "mainImageUrl": "https://m.media-amazon.com/images/I/81smNPwdpzL._AC_UY218_.jpg",
+            "rating": 4.6,
+            "ratingsTotal": 129,
+            "isPrime": false,
+            "coupon": null
+          },
+          {
+            "sponsored": false,
+            "title": "ASUS Prime 750W Gold (750 Watt, ATX 3.1 Compatible, Fully Modular Power Supply, 80+ Gold Certified, Dual Ball Bearings, Two Color Options in One, 8-Year Warranty)",
+            "url": "https://www.amazon.com/ASUS-Compatible-Certified-Bearings-Warranty/dp/B0CPR1FR7H/ref=sr_1_10?dib=eyJ2IjoiMSJ9.UCS0BguIYP0T_oPyfh6JYiZNMklVKl6tXKUCS9RlUUjaQJ-lLdzTaqUd58P0YE1W20O3z37wX74wfdn0JFPESuHPREH_mP6ScvG1bLYR7GnI_4KxIRUd815KNk1d_Q-0L7luRMHDaSuZwNXvuGWFFwN0NikWrEgjekOeKDyeRUJscacXQgp6t5N40XyB92DV7tPxS2y4ONEuuLQN3Z9A1H_5mUa4vXav7f0fWh5wcdQ.nw4EhkyC1PY222R0JNyfA17_4nxmQpKy5fyjZRIy-j8&dib_tag=se&keywords=750W+80%2B+Gold+fully+modular+power+supply&qid=1787174210&sr=8-10",
+            "asin": "B0CPR1FR7H",
+            "price": {
+              "symbol": "$",
+              "value": 89.99,
+              "currency": "USD",
+              "display": "$89.99"
+            },
+            "mainImageUrl": "https://m.media-amazon.com/images/I/717mXxH8VAL._AC_UY218_.jpg",
+            "rating": 4.8,
+            "ratingsTotal": 184,
+            "isPrime": false,
+            "coupon": null
+          }
+        ]
+      }
+    }
+  }
+}
