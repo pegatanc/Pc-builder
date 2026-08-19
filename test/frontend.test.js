@@ -70,3 +70,25 @@ test('the wide sparkline rule follows the base rule it overrides', () => {
     'canvas.spark-wide must come after canvas.spark'
   );
 });
+
+/** Copy-all-links button. */
+test('the copy button exists and is not the one hidden in static mode', () => {
+  assert.match(html, /id="copy-links"/, 'markup needs the copy button');
+  // applyMode hides #refresh when there is no API behind the page; the copy
+  // button is pure client-side and must keep working in the published build.
+  const applyMode = app.slice(app.indexOf('function applyMode'), app.indexOf('function applyMode') + 600);
+  assert.match(applyMode, /getElementById\('refresh'\)/);
+  assert.doesNotMatch(applyMode, /copy-links/, 'copy button must not be hidden in static mode');
+});
+
+test('the copied list is built from the displayed order', () => {
+  const fn = app.slice(app.indexOf('function partLinkList'), app.indexOf('async function copyText'));
+  assert.match(fn, /sortItems\(data\.items, sortState\)/, 'must copy in the order shown');
+  assert.match(fn, /\.filter\(Boolean\)/, 'parts without a link must be dropped');
+});
+
+test('clipboard copy falls back when there is no secure context', () => {
+  const fn = app.slice(app.indexOf('async function copyText'), app.indexOf('function wireCopyLinks'));
+  assert.match(fn, /isSecureContext/, 'must check for a secure context');
+  assert.match(fn, /execCommand\('copy'\)/, 'needs a fallback for plain-HTTP origins');
+});

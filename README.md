@@ -313,6 +313,10 @@ to any part if you want it back. If you switch `amazonDomain`, remember to updat
 
 ## Reading the table
 
+- **Copy all links** — copies every part as `Name — url`, one per line, in the
+  order currently displayed. Uses the clipboard API where the page is served
+  over HTTPS or localhost, and falls back to a textarea on a plain-HTTP origin.
+  Works in the published static build too, where Refresh is hidden.
 - **Sorting** — click any column header to sort; click again to reverse, and a
   third time to return to catalogue order (CPU, board, memory…). The choice is
   remembered across reloads, and headers are keyboard-operable.

@@ -273,7 +273,86 @@ function paintSortHeaders() {
   }
 }
 
+/* ---------- copy all links ---------- */
+
+/**
+ * One line per part, in the order currently displayed, as "Name — url".
+ * Readable enough to paste into notes and still one URL per line for anything
+ * that opens links in bulk.
+ */
+function partLinkList(data) {
+  return sortItems(data.items, sortState)
+    .map((item) => {
+      const url = item.best?.url || item.listings.find((l) => l.url)?.url;
+      return url ? `${item.name} — ${url}` : null;
+    })
+    .filter(Boolean);
+}
+
+/**
+ * navigator.clipboard needs a secure context, which covers HTTPS and localhost
+ * but not a plain-HTTP LAN address — so fall back to the textarea trick rather
+ * than silently doing nothing there.
+ */
+async function copyText(text) {
+  if (window.isSecureContext && navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      /* denied or unavailable — try the fallback below */
+    }
+  }
+
+  const area = document.createElement('textarea');
+  area.value = text;
+  area.setAttribute('readonly', '');
+  area.style.position = 'fixed';
+  area.style.top = '-1000px';
+  area.style.opacity = '0';
+  document.body.append(area);
+  area.select();
+
+  let copied = false;
+  try {
+    copied = document.execCommand('copy');
+  } catch {
+    copied = false;
+  }
+  area.remove();
+  return copied;
+}
+
+function wireCopyLinks() {
+  const button = document.getElementById('copy-links');
+  if (!button) return;
+  const original = button.textContent;
+  let resetTimer;
+
+  button.addEventListener('click', async () => {
+    if (!lastData) return;
+    const lines = partLinkList(lastData);
+
+    if (!lines.length) {
+      button.textContent = 'No links yet';
+    } else {
+      const copied = await copyText(lines.join('\n'));
+      button.textContent = copied
+        ? `Copied ${lines.length} link${lines.length === 1 ? '' : 's'}`
+        : 'Copy failed';
+    }
+
+    button.classList.add('flash');
+    clearTimeout(resetTimer);
+    resetTimer = setTimeout(() => {
+      button.textContent = original;
+      button.classList.remove('flash');
+    }, 1800);
+  });
+}
+
 /* ---------- rendering ---------- */
+
 
 
 function renderSummary(data) {
@@ -616,6 +695,7 @@ function applyMode(data) {
 }
 
 wireSortHeaders();
+wireCopyLinks();
 
 document.getElementById('refresh').addEventListener('click', async (event) => {
   const button = event.currentTarget;
