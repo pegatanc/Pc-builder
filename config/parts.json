@@ -50,7 +50,8 @@
       "listings": [
         {
           "retailer": "Amazon",
-          "query": "G.Skill Ripjaws V 32GB 2x16GB DDR4-3600 CL16"
+          "query": "G.Skill Ripjaws V 32GB 2x16GB DDR4-3600 CL16",
+          "altQuery": "32GB 2x16GB DDR4 3600 desktop memory kit"
         }
       ]
     },
@@ -64,7 +65,8 @@
       "listings": [
         {
           "retailer": "Amazon",
-          "query": "SK hynix Platinum P41 1TB NVMe SSD"
+          "query": "SK hynix Platinum P41 1TB NVMe SSD",
+          "altQuery": "1TB NVMe M.2 PCIe 4.0 internal SSD"
         }
       ]
     },

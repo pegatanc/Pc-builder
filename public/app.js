@@ -273,7 +273,66 @@ function paintSortHeaders() {
   }
 }
 
+/* ---------- alternatives ---------- */
+
+// Which parts are expanded. In memory only: a disclosure state isn't worth
+// persisting, and it should start closed so the table stays scannable.
+const expanded = new Set();
+
+function toggleAlternatives(partId) {
+  if (expanded.has(partId)) expanded.delete(partId);
+  else expanded.add(partId);
+  if (lastData) renderTable(lastData);
+}
+
+/** The expansion row: one line per alternative, cheapest first. */
+function renderAlternativesRow(item, currency, columnCount) {
+  const row = el('tr', 'alt-row');
+  const cell = el('td', 'alt-cell');
+  cell.colSpan = columnCount;
+  cell.dataset.label = '';
+
+  const list = el('div', 'alt-list');
+  for (const alt of item.alternatives) {
+    const entry = el('div', 'alt-item');
+
+    const title = el('a', 'alt-title', alt.title);
+    title.href = alt.url;
+    title.target = '_blank';
+    title.rel = 'noopener noreferrer';
+
+    const price = el('span', 'alt-price', money(alt.price, alt.currency || currency));
+
+    const delta = el('span', 'alt-delta');
+    if (alt.deltaVsBest != null) {
+      const cheaper = alt.deltaVsBest < 0;
+      delta.textContent = `${cheaper ? '−' : '+'}${money(Math.abs(alt.deltaVsBest), currency)}`;
+      delta.classList.add(cheaper ? 'down' : 'up');
+      delta.title = cheaper ? 'cheaper than your pick' : 'dearer than your pick';
+    }
+
+    const rating = el(
+      'span',
+      'alt-rating',
+      alt.rating ? `${alt.rating}★ ${alt.ratingsTotal ?? ''}`.trim() : ''
+    );
+
+    entry.append(title, price, delta, rating);
+    list.append(entry);
+  }
+
+  const note = el(
+    'div',
+    'alt-note',
+    'Suggestions from an Amazon search — check the specification matches before buying.'
+  );
+  cell.append(list, note);
+  row.append(cell);
+  return row;
+}
+
 /* ---------- owner recognition ---------- */
+
 
 /*
  * Recognises a personal key so the page can say "this is your tracker".
@@ -508,6 +567,20 @@ function renderPartRow(item, currency) {
     nameNode.textContent = item.name;
   }
   partCell.append(nameNode, el('div', 'part-meta', `${item.category} · ${item.spec || item.model || ''}`));
+
+  if (item.alternatives?.length) {
+    const open = expanded.has(item.id);
+    const toggle = el('button', 'alt-toggle');
+    toggle.type = 'button';
+    toggle.setAttribute('aria-expanded', String(open));
+    const cheaper = item.alternatives.filter((a) => a.deltaVsBest != null && a.deltaVsBest < 0).length;
+    toggle.textContent =
+      `${open ? '▾' : '▸'} ${item.alternatives.length} alternative` +
+      `${item.alternatives.length === 1 ? '' : 's'}${cheaper ? ` · ${cheaper} cheaper` : ''}`;
+    toggle.addEventListener('click', () => toggleAlternatives(item.id));
+    partCell.append(toggle);
+  }
+
   partCell.dataset.label = 'Part';
   row.append(partCell);
 
@@ -637,8 +710,12 @@ function renderTable(data) {
     return;
   }
 
+  const columnCount = document.querySelectorAll('#parts-table thead th').length;
   for (const item of sortItems(data.items, sortState)) {
     body.append(renderPartRow(item, data.currency));
+    if (expanded.has(item.id) && item.alternatives?.length) {
+      body.append(renderAlternativesRow(item, data.currency, columnCount));
+    }
   }
   paintSortHeaders();
 

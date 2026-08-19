@@ -59,6 +59,7 @@ const defaults = {
   baselineTotal: 0,
   schedule: { cron: '0 */12 * * *', timezone: 'UTC', runOnStart: true },
   alerts: { dropPercent: 10, windowDays: 30, minSamples: 3 },
+  alternatives: { enabled: true, perPart: 5, refreshDays: 7, minRating: 4.0, minReviews: 50, priceBand: [0.4, 2.5] },
   sources: {
     order: ['paapi', 'keepa', 'bestbuy', 'jsonld', 'manual', 'sample'],
     enabled: {},
@@ -75,6 +76,7 @@ export function loadConfig() {
     ...raw,
     schedule: { ...defaults.schedule, ...raw.schedule },
     alerts: { ...defaults.alerts, ...raw.alerts },
+    alternatives: { ...defaults.alternatives, ...raw.alternatives },
     sources: {
       ...defaults.sources,
       ...raw.sources,

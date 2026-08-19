@@ -46,9 +46,15 @@ const dailySeries = db.prepare(`
 `);
 
 const listingsStmt = db.prepare(`
-  SELECT part_id, retailer, asin, sku, query, url, allow_html
+  SELECT part_id, retailer, asin, sku, query, alt_query, url, allow_html
   FROM listings
   ORDER BY part_id, retailer
+`);
+
+const alternativesStmt = db.prepare(`
+  SELECT part_id, asin, title, price_cents, currency, url, image_url, rating, ratings_total, discovered_at
+  FROM alternatives
+  ORDER BY part_id, price_cents
 `);
 
 const lastRun = db.prepare(`
@@ -86,6 +92,7 @@ export function getBuild() {
   const offersByPart = groupBy(latestPerRetailer.all(), 'part_id');
   const seriesByPart = groupBy(dailySeries.all(`-${SPARKLINE_DAYS} days`), 'part_id');
   const listingsByPart = groupBy(listingsStmt.all(), 'part_id');
+  const alternativesByPart = groupBy(alternativesStmt.all(), 'part_id');
 
   const windowStart = daysAgoIso(alerts.windowDays);
   const staleBefore = daysAgoIso(STALE_AFTER_DAYS);
@@ -155,8 +162,25 @@ export function getBuild() {
         asin: l.asin,
         sku: l.sku,
         query: l.query,
+        altQuery: l.alt_query,
         url: l.url,
         allowHtml: !!l.allow_html,
+      })),
+      alternatives: (alternativesByPart.get(part.id) || []).map((a) => ({
+        asin: a.asin,
+        title: a.title,
+        price: fromCents(a.price_cents),
+        currency: a.currency,
+        url: a.url,
+        imageUrl: a.image_url,
+        rating: a.rating,
+        ratingsTotal: a.ratings_total,
+        discoveredAt: a.discovered_at,
+        // Precomputed so the UI never has to know which offer "best" was.
+        deltaVsBest:
+          best && a.price_cents != null
+            ? Number((fromCents(a.price_cents) - best.price).toFixed(2))
+            : null,
       })),
       stats: {
         windowDays: alerts.windowDays,
@@ -272,6 +296,7 @@ export function getTrackedListings() {
       asin: l.asin,
       sku: l.sku,
       query: l.query,
+      altQuery: l.alt_query,
       url: l.url,
       allowHtml: !!l.allow_html,
     })),

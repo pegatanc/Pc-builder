@@ -61,6 +61,14 @@ jobs:
           BESTBUY_API_KEY: ${{ secrets.BESTBUY_API_KEY }}
         run: npm run fetch
 
+      # Discovery, not tracking: refreshAlternatives() only calls the API for
+      # parts whose suggestions are older than alternatives.refreshDays, so this
+      # runs every 12h but spends about one request per part per week.
+      - name: Refresh part alternatives
+        env:
+          CANOPY_API_KEY: ${{ secrets.CANOPY_API_KEY }}
+        run: npm run alternatives
+
       - name: Save price history
         run: npm run history:export
 

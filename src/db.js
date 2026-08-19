@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS listings (
   asin      TEXT,
   sku       TEXT,
   query     TEXT,
+  alt_query TEXT,
   url       TEXT,
   allow_html INTEGER NOT NULL DEFAULT 0,
   UNIQUE (part_id, retailer)
@@ -48,6 +49,26 @@ CREATE TABLE IF NOT EXISTS price_history (
 
 CREATE INDEX IF NOT EXISTS idx_price_part_time ON price_history (part_id, observed_at DESC);
 CREATE INDEX IF NOT EXISTS idx_price_part_retailer ON price_history (part_id, retailer, observed_at DESC);
+
+-- Discovered alternatives per part. A snapshot, not a history: a refresh
+-- replaces a part's rows wholesale, which is what keeps the API cost down.
+CREATE TABLE IF NOT EXISTS alternatives (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  part_id       TEXT NOT NULL REFERENCES parts(id) ON DELETE CASCADE,
+  asin          TEXT NOT NULL,
+  title         TEXT NOT NULL,
+  brand         TEXT,
+  price_cents   INTEGER,
+  currency      TEXT NOT NULL DEFAULT 'USD',
+  url           TEXT,
+  image_url     TEXT,
+  rating        REAL,
+  ratings_total INTEGER,
+  discovered_at TEXT NOT NULL,
+  UNIQUE (part_id, asin)
+);
+
+CREATE INDEX IF NOT EXISTS idx_alternatives_part ON alternatives (part_id, price_cents);
 
 CREATE TABLE IF NOT EXISTS fetch_runs (
   id           INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -92,3 +92,31 @@ test('clipboard copy falls back when there is no secure context', () => {
   assert.match(fn, /isSecureContext/, 'must check for a secure context');
   assert.match(fn, /execCommand\('copy'\)/, 'needs a fallback for plain-HTTP origins');
 });
+
+/** Alternatives expansion row. */
+test('the alternatives row spans the whole table', () => {
+  const fn = app.slice(app.indexOf('function renderAlternativesRow'));
+  assert.match(fn, /cell\.colSpan = columnCount/, 'the expansion cell must span every column');
+  // columnCount is read from the live header, so adding a column cannot leave a
+  // stale literal behind — the trap the colspan test above exists to catch.
+  assert.match(app, /#parts-table thead th'\)\.length/, 'columnCount must come from the header');
+});
+
+test('the alternatives toggle is a real button with its expanded state', () => {
+  assert.match(app, /el\('button', 'alt-toggle'\)/, 'the disclosure must be a button, not a div');
+  assert.match(app, /toggle\.setAttribute\('aria-expanded'/, 'the state must be exposed to AT');
+  assert.match(app, /toggle\.type = 'button'/, 'a bare button inside a form would submit it');
+});
+
+test('alternative links open safely in a new tab', () => {
+  const fn = app.slice(app.indexOf('function renderAlternativesRow'), app.indexOf('/* ---------- owner'));
+  assert.match(fn, /rel = 'noopener noreferrer'/, 'outbound links need noopener');
+});
+
+test('the phone layout resets the alternatives cell out of the flex row', () => {
+  const phone = css.slice(css.indexOf('@media (max-width: 720px)'));
+  // Same class-versus-`td` specificity trap as .col-part: the `td` flex rule
+  // would otherwise put the title, price and note on one baseline.
+  assert.match(phone, /td\.alt-cell\s*\{/, 'phone layout must reset td.alt-cell to a block');
+  assert.match(phone, /\.alt-item\s*\{/, 'phone layout must restack the alternative rows');
+});
