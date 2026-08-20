@@ -14,7 +14,10 @@
   },
   "alternatives": {
     "enabled": true,
-    "perPart": 5,
+    "perPart": 8,
+    "perPartOverrides": {
+      "cpu-ryzen-7-5700x": 12
+    },
     "refreshDays": 7,
     "minRating": 4.0,
     "minReviews": 50,

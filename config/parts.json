@@ -2,7 +2,7 @@
   "$comment": [
     "Seed catalogue. `npm run seed` upserts this into SQLite (safe to re-run).",
     "A part can have several listings; the tracker records a price per (part, retailer)",
-    "and shows the cheapest one. ASINs are only filled in where they were supplied —",
+    "and shows the cheapest one. ASINs are only filled in where they were supplied \u2014",
     "no ASIN is guessed. A listing without an ASIN carries a `query` instead: search-capable",
     "sources match on it, and its link resolves to an Amazon search rather than a product",
     "page, because those parts were specified by class rather than by exact SKU.",
@@ -21,7 +21,14 @@
         {
           "retailer": "Amazon",
           "asin": "B09VCHQHZ6",
-          "url": "https://www.amazon.com/dp/B09VCHQHZ6"
+          "url": "https://www.amazon.com/dp/B09VCHQHZ6",
+          "altReject": [
+            "ryzen\\D*\\d\\s+[789]\\d{3}",
+            "threadripper",
+            "\\bepyc\\b",
+            "\\bintel\\b|\\bcore\\s+i[3579]\\b|\\bxeon\\b",
+            "mini pc|gaming pc|desktop computer|motherboard"
+          ]
         }
       ]
     },

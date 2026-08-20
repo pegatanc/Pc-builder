@@ -311,7 +311,8 @@ Worth knowing:
   "baselineTotal": 1315.00,
   "schedule": { "cron": "0 */12 * * *", "timezone": "America/New_York", "runOnStart": true },
   "alerts":   { "dropPercent": 10, "windowDays": 30, "minSamples": 3 },
-  "alternatives": { "enabled": true, "perPart": 5, "refreshDays": 7,
+  "alternatives": { "enabled": true, "perPart": 8, "refreshDays": 7,
+                    "perPartOverrides": { "cpu-ryzen-7-5700x": 12 },
                     "minRating": 4.0, "minReviews": 50, "priceBand": [0.4, 2.5] },
   "targets":  { "cpu-ryzen-7-5700x": 150.00, "gpu-asrock-rx-7900-xt": 620.00 }
 }
@@ -378,9 +379,17 @@ re-searched once its snapshot is older than `refreshDays` (default 7), which wor
 about 40 requests a month for nine parts (~$0.40) on top of the ~$5.40/mo the price fetch
 itself costs. Set `alternatives.enabled` to `false` to stop spending entirely.
 
+**How many.** `perPart` (default 8) caps each part's list, and `perPartOverrides` raises
+it for a part that deserves more. The CPU is set to 12: an AM4 socket has a whole ladder
+of chips on it, and the interesting ones sit at *both* ends — the list is sorted cheapest
+first, so a cap set too low silently throws the upgrades away rather than the junk.
+
 **Tuning.** `npm run alternatives dry` runs a search for every part and prints what came
 back **without writing anything** — the way to check relevance before trusting the
-filters. What the filter drops:
+filters. It also saves the preview to `data/alternatives-preview.json`; read that file
+rather than re-running, because every dry run spends one metered request per part.
+
+What the filter drops:
 
 - sponsored results (in practice they duplicate organic hits further down the page)
 - the ASINs you already track, and duplicates within one response
@@ -388,6 +397,7 @@ filters. What the filter drops:
   listing is indistinguishable from a bad one
 - anything outside `priceBand` × a reference price, which throws out the cables and
   single sticks that cluster far below what the part actually costs
+- anything matching the part's `altReject` patterns — see below
 
 That reference is the part's **current tracked price**, and failing that the **median of
 the results themselves** — deliberately never the configured target. A target is a wish,
@@ -403,8 +413,32 @@ different terms:
   "altQuery": "1TB NVMe M.2 PCIe 4.0 internal SSD" }
 ```
 
+**Compatibility.** Search has no notion of a socket, so a query for this build's Ryzen 7
+5700X happily returns AM5 chips — fine processors that cannot go in an AM4 board at any
+price. `altReject` is a list of case-insensitive regular expressions matched against the
+title; anything matching is dropped. The CPU carries a guard that keeps Ryzen 1000–5000
+and drops 7000/9000, Threadripper, EPYC, Intel, and prebuilt machines:
+
+```jsonc
+{ "retailer": "Amazon", "asin": "B09VCHQHZ6",
+  "altReject": ["ryzen\\D*\\d\\s+[789]\\d{3}", "threadripper", "\\bintel\\b"] }
+```
+
+An unparseable pattern is skipped with a warning rather than taking the refresh down, and
+a part with a broken filter shows too many alternatives rather than none.
+
+**Changing any of this re-searches the part on the next run.** The snapshot stores a
+fingerprint of the terms, reject patterns, cap and thresholds it was gathered with; when
+that no longer matches the config, the part counts as stale even if it was refreshed an
+hour ago. Without it, editing a query would appear to do nothing for up to a week.
+
 Alternatives ride into `build.json` with everything else, so the published static site
 gets them at no extra cost.
+
+If Canopy returns **402 Payment Required** the account is out of credit: the run stops on
+the first one rather than spending a request per part to learn the same thing, the
+existing suggestions are left untouched, and every part stays marked for refresh so
+topping up and re-running picks up where it left off.
 
 ## The build
 

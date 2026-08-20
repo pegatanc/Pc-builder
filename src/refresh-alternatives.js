@@ -10,6 +10,9 @@
  * `--flags` before they reach the script.)
  */
 import './lib/fatal.js';
+import fs from 'node:fs';
+import path from 'node:path';
+import { DATA_DIR } from './config.js';
 import { seed } from './seed.js';
 import { getTrackedListings, getBuild } from './repo.js';
 import { refreshAlternatives, settings } from './alternatives.js';
@@ -51,6 +54,11 @@ console.log(
 const result = await refreshAlternatives(parts, { dryRun, force });
 
 if (dryRun && result.preview.length) {
+  // Every dry run spends one metered request per part, so the output is written
+  // out too: re-reading the file costs nothing, re-running the command does not.
+  const previewFile = path.join(DATA_DIR, 'alternatives-preview.json');
+  fs.writeFileSync(previewFile, JSON.stringify(result.preview, null, 2));
+
   console.log('\n--- preview (nothing written) ---');
   for (const row of result.preview) {
     console.log(`\n${row.name}`);
@@ -61,11 +69,19 @@ if (dryRun && result.preview.length) {
     }
     if (!row.items.length) console.log('    (nothing passed the filters)');
   }
-  console.log('');
+  console.log(`\nSaved to ${previewFile} — read that instead of re-running.\n`);
 }
 
 if (result.errors.length) {
   console.error('\nErrors:');
   for (const e of result.errors) console.error(`  - ${e}`);
+}
+
+if (result.outOfCredit) {
+  console.error(
+    '\nThe Canopy account has no credit left, so nothing was refreshed and the\n' +
+      'existing suggestions were left untouched. Top it up at https://canopyapi.co\n' +
+      'and run this again — every part is already marked for refresh.'
+  );
 }
 process.exit(0);

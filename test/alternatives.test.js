@@ -17,9 +17,20 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 // before the import runs. Hoisted static imports would be too late.
 const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'alt-test-'));
 process.env.DATA_DIR = dataDir;
-const { searchResults, normalise, medianPrice, filterCandidates, stalePartIds, refreshAlternatives } =
-  await import('../src/alternatives.js');
+const {
+  searchResults,
+  normalise,
+  medianPrice,
+  filterCandidates,
+  stalePartIds,
+  refreshAlternatives,
+  partSettings,
+  compileRejects,
+  discoveryFingerprint,
+  searchTerms,
+} = await import('../src/alternatives.js');
 const { db } = await import('../src/db.js');
+const { loadParts, config } = await import('../src/config.js');
 
 test.after(() => fs.rmSync(dataDir, { recursive: true, force: true }));
 
@@ -229,4 +240,182 @@ test('discovery skips silently without an api key', async () => {
   } finally {
     if (realKey !== undefined) process.env.CANOPY_API_KEY = realKey;
   }
+});
+
+/* ---------- per-part limits ---------- */
+
+test('perPartOverrides raises the cap for one part only', () => {
+  const options = { perPart: 8, perPartOverrides: { 'cpu-ryzen-7-5700x': 12 } };
+  assert.equal(partSettings('cpu-ryzen-7-5700x', options).perPart, 12);
+  assert.equal(partSettings('case-nzxt-h6-flow', options).perPart, 8);
+  assert.equal(partSettings('anything', { perPart: 8 }).perPart, 8);
+});
+
+test('the configured overrides name parts that exist', () => {
+  // A typo here fails silently — the part just keeps the default cap.
+  const ids = new Set(loadParts().map((p) => p.id));
+  for (const id of Object.keys(config.alternatives.perPartOverrides || {})) {
+    assert.ok(ids.has(id), `perPartOverrides names unknown part "${id}"`);
+  }
+});
+
+/* ---------- compatibility rejects ---------- */
+
+// Real titles from a live search for "AMD Ryzen 7 5700X". The build's board is
+// AM4, so the AM5 chips on the same page are not alternatives at any price.
+const CPU_TITLES = {
+  keep: [
+    'AMD Ryzen 7 5800X 8-core, 16-thread unlocked desktop processor',
+    'AMD Ryzen™ 7 5800XT 8-Core, 16-Thread Unlocked Desktop Processor',
+    'AMD Ryzen 7 5700 8 Cores / 16 Thread 65W TDP Socket AM4 L2+L3 Cache 20MB',
+    'AMD Ryzen™ 7 5700G 8-Core, 16-Thread Desktop Processor with Radeon™ Graphics',
+    'AMD Ryzen 5 5500 6-Core, 12-Thread Unlocked Desktop Processor',
+    'AMD Ryzen™ 9 5900XT 16-Core, 32-Thread Unlocked Desktop Processor',
+    'AMD Ryzen 5 5600X 6-core, 12-thread unlocked desktop processor',
+    'Ryzen 7 5800X3D 8-core, 16-Thread Desktop Processor with AMD 3D V-Cache',
+    'AMD Ryzen 9 3950X 16-Core, 32-Thread Unlocked Desktop Processor',
+    'AMD Ryzen 9 5900X 12-core, 24-Thread Unlocked Desktop Processor',
+  ],
+  drop: [
+    'AMD Ryzen 5 7600X 6-Core, 12-Thread Unlocked Desktop Processor',
+    'AMD RYZEN 7 9800X3D 8-Core, 16-Thread Desktop Processor',
+    'AMD Ryzen™ 5 9600X 6-Core, 12-Thread Unlocked Desktop Processor',
+    'AMD Ryzen™ 9 9950X 16-Core, 32-Thread Unlocked Desktop Processor',
+    'AMD Ryzen Threadripper 1920X (12-Core/24-Thread) Desktop Processor',
+    'Intel Boxed Core I7-6700 FC-LGA14C 3.40 GHz 8 M Processor Cache',
+    'Micro Center AMD 5500 Processor with ASUS TUF Gaming A520M Plus Motherboard',
+    'GEEKOM GT1 Mega AI Mini PC 14th Gen Intel Ultra9 185H',
+  ],
+};
+
+test('the AM4 guard keeps same-socket chips and drops the rest', () => {
+  const cpu = loadParts().find((p) => p.id === 'cpu-ryzen-7-5700x');
+  const patterns = cpu.listings.find((l) => l.retailer === 'Amazon').altReject;
+  assert.ok(patterns?.length, 'the CPU listing must carry altReject patterns');
+
+  const items = [...CPU_TITLES.keep, ...CPU_TITLES.drop].map((title, i) => ({
+    asin: `A${i}`,
+    title,
+    price: { value: 200 },
+    rating: 4.8,
+    ratingsTotal: 5000,
+  }));
+
+  const kept = filterCandidates(items, {
+    reject: patterns,
+    reference: 200,
+    options: { perPart: 50 },
+  });
+  const keptTitles = kept.map((k) => k.title);
+
+  for (const title of CPU_TITLES.keep) {
+    assert.ok(keptTitles.includes(title), `should have kept: ${title}`);
+  }
+  for (const title of CPU_TITLES.drop) {
+    assert.ok(!keptTitles.includes(title), `should have dropped: ${title}`);
+  }
+});
+
+test('an unparseable reject pattern is skipped, not fatal', () => {
+  // The patterns are hand-written regex in config; one stray bracket must not
+  // take the whole refresh down.
+  assert.deepEqual(compileRejects(['('] ).length, 0);
+  const kept = filterCandidates(
+    [{ asin: 'A', title: 'A fine part', price: { value: 100 }, rating: 4.8, ratingsTotal: 900 }],
+    { reject: ['('], options: { perPart: 5 } }
+  );
+  assert.equal(kept.length, 1, 'a broken pattern must not filter everything out');
+});
+
+test('rejects match case-insensitively and only on the title', () => {
+  const items = [
+    { asin: 'A', title: 'DDR5 memory kit', price: { value: 100 }, rating: 4.8, ratingsTotal: 900 },
+    { asin: 'B', title: 'ddr5 memory kit', price: { value: 100 }, rating: 4.8, ratingsTotal: 900 },
+    { asin: 'C', title: 'DDR4 memory kit', price: { value: 100 }, rating: 4.8, ratingsTotal: 900 },
+  ];
+  const kept = filterCandidates(items, { reject: ['ddr5'], options: { perPart: 5 } });
+  assert.deepEqual(kept.map((k) => k.asin), ['C']);
+});
+
+/* ---------- config changes invalidate the snapshot ---------- */
+
+test('the fingerprint tracks everything that changes what a search returns', () => {
+  const base = { terms: 'a cpu', reject: ['ddr5'], options: { perPart: 8, minRating: 4, minReviews: 50, priceBand: [0.4, 2.5] } };
+  const same = discoveryFingerprint({ ...base, options: { ...base.options } });
+  assert.equal(discoveryFingerprint(base), same, 'equal settings must hash equally');
+
+  const differs = [
+    { ...base, terms: 'a different cpu' },
+    { ...base, reject: [] },
+    { ...base, options: { ...base.options, perPart: 12 } },
+    { ...base, options: { ...base.options, minRating: 4.5 } },
+    { ...base, options: { ...base.options, minReviews: 10 } },
+    { ...base, options: { ...base.options, priceBand: [0.5, 2.5] } },
+  ];
+  for (const variant of differs) {
+    assert.notEqual(discoveryFingerprint(variant), same, `should differ: ${JSON.stringify(variant)}`);
+  }
+});
+
+test('searchTerms prefers altQuery, then query, then the part name', () => {
+  const amazon = (listing) => ({ name: 'Fallback Name', listings: listing ? [listing] : [] });
+  assert.equal(searchTerms(amazon({ retailer: 'Amazon', altQuery: 'alt', query: 'q' })).terms, 'alt');
+  assert.equal(searchTerms(amazon({ retailer: 'Amazon', query: 'q' })).terms, 'q');
+  assert.equal(searchTerms(amazon(null)).terms, 'Fallback Name');
+});
+
+test('a part is due again when its discovery settings change', () => {
+  // The trap this closes: edit a query or a reject pattern and the snapshot is
+  // wrong immediately, but `discovered_at` still says fresh for another week.
+  db.prepare(`INSERT INTO parts (id, name, category) VALUES ('psu', 'PSU', 'psu')`).run();
+  const now = Date.now();
+  db.prepare(
+    `INSERT INTO alternatives (part_id, asin, title, discovered_at, config_hash)
+     VALUES ('psu', 'A9', 'a psu', ?, 'hash-v1')`
+  ).run(new Date(now - 86400_000).toISOString());
+
+  const opts = { refreshDays: 7, now };
+  assert.deepEqual(stalePartIds(['psu'], { ...opts, fingerprints: { psu: 'hash-v1' } }), []);
+  assert.deepEqual(stalePartIds(['psu'], { ...opts, fingerprints: { psu: 'hash-v2' } }), ['psu']);
+  // No fingerprint supplied means "don't judge on settings" — age still applies.
+  assert.deepEqual(stalePartIds(['psu'], opts), []);
+});
+
+test('a snapshot from before fingerprinting is refreshed once', () => {
+  db.prepare(`INSERT INTO parts (id, name, category) VALUES ('fan', 'Fan', 'fan')`).run();
+  db.prepare(
+    `INSERT INTO alternatives (part_id, asin, title, discovered_at) VALUES ('fan', 'A8', 'a fan', ?)`
+  ).run(new Date().toISOString());
+
+  assert.deepEqual(
+    stalePartIds(['fan'], { refreshDays: 7, now: Date.now(), fingerprints: { fan: 'hash-v1' } }),
+    ['fan'],
+    'a NULL stored hash differs from the current one, so it refreshes'
+  );
+});
+
+test('a 402 stops the run instead of spending a request per part', () => {
+  // Out of credit is an account-level failure. Carrying on would count eight
+  // more requests, log eight more identical errors, and change nothing.
+  const realFetch = globalThis.fetch;
+  const realKey = process.env.CANOPY_API_KEY;
+  let calls = 0;
+  globalThis.fetch = async () => {
+    calls++;
+    return { ok: false, status: 402, statusText: 'Payment Required', text: async () => '', json: async () => ({}) };
+  };
+  process.env.CANOPY_API_KEY = 'test-key';
+
+  const parts = ['a', 'b', 'c'].map((id) => ({ id, name: `Part ${id}`, listings: [] }));
+  return refreshAlternatives(parts, { log: () => {}, dryRun: true })
+    .then((result) => {
+      assert.equal(result.outOfCredit, true, 'the run must report why it stopped');
+      assert.equal(result.requests, 1, 'it must not keep paying for the same error');
+      assert.ok(calls <= 3, 'retries are bounded');
+    })
+    .finally(() => {
+      globalThis.fetch = realFetch;
+      if (realKey === undefined) delete process.env.CANOPY_API_KEY;
+      else process.env.CANOPY_API_KEY = realKey;
+    });
 });

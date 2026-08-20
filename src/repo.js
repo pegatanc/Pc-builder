@@ -46,7 +46,7 @@ const dailySeries = db.prepare(`
 `);
 
 const listingsStmt = db.prepare(`
-  SELECT part_id, retailer, asin, sku, query, alt_query, url, allow_html
+  SELECT part_id, retailer, asin, sku, query, alt_query, alt_reject, url, allow_html
   FROM listings
   ORDER BY part_id, retailer
 `);
@@ -63,6 +63,21 @@ const lastRun = db.prepare(`
   ORDER BY id DESC
   LIMIT 1
 `);
+
+/**
+ * `alt_reject` is stored as JSON because SQLite has no array type. Anything
+ * unreadable degrades to "no patterns" — a broken filter should show too many
+ * alternatives, never crash the page.
+ */
+function parseRejects(value) {
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
 
 function groupBy(rows, key) {
   const map = new Map();
@@ -163,6 +178,7 @@ export function getBuild() {
         sku: l.sku,
         query: l.query,
         altQuery: l.alt_query,
+        altReject: parseRejects(l.alt_reject),
         url: l.url,
         allowHtml: !!l.allow_html,
       })),
@@ -297,6 +313,7 @@ export function getTrackedListings() {
       sku: l.sku,
       query: l.query,
       altQuery: l.alt_query,
+      altReject: parseRejects(l.alt_reject),
       url: l.url,
       allowHtml: !!l.allow_html,
     })),

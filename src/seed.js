@@ -38,6 +38,10 @@ function validate(parts) {
         problems.push(`${label}: duplicate listing for retailer "${listing.retailer}"`);
       }
       retailers.add(listing.retailer);
+
+      if (listing.altReject && !Array.isArray(listing.altReject)) {
+        problems.push(`${label}: listings[${j}] "altReject" must be an array of patterns`);
+      }
     });
   });
 
@@ -59,13 +63,14 @@ const upsertPart = db.prepare(`
 `);
 
 const upsertListing = db.prepare(`
-  INSERT INTO listings (part_id, retailer, asin, sku, query, alt_query, url, allow_html)
-  VALUES (@part_id, @retailer, @asin, @sku, @query, @alt_query, @url, @allow_html)
+  INSERT INTO listings (part_id, retailer, asin, sku, query, alt_query, alt_reject, url, allow_html)
+  VALUES (@part_id, @retailer, @asin, @sku, @query, @alt_query, @alt_reject, @url, @allow_html)
   ON CONFLICT(part_id, retailer) DO UPDATE SET
     asin = excluded.asin,
     sku = excluded.sku,
     query = excluded.query,
     alt_query = excluded.alt_query,
+    alt_reject = excluded.alt_reject,
     url = excluded.url,
     allow_html = excluded.allow_html
 `);
@@ -95,6 +100,9 @@ export function seed({ log = console.log } = {}) {
           sku: listing.sku ?? null,
           query: listing.query ?? null,
           alt_query: listing.altQuery ?? null,
+          // Stored as JSON: SQLite has no array type and these are read back
+          // straight into the filter.
+          alt_reject: listing.altReject?.length ? JSON.stringify(listing.altReject) : null,
           // Derived when not given, so every part is clickable in the UI.
           url: listingUrl(listing, { amazonDomain: config.sources.amazonDomain }),
           allow_html: listing.allowHtml ? 1 : 0,

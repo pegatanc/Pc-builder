@@ -145,6 +145,11 @@ const ALT_COLUMNS = [
   'rating',
   'ratings_total',
   'discovered_at',
+  // What the snapshot was searched with. Without it the fingerprint check in
+  // stalePartIds() sees NULL after every CI import, calls every part changed,
+  // and re-searches all of them each run — exactly the cost bug the staleness
+  // check exists to prevent.
+  'config_hash',
 ];
 
 export function exportAlternatives(file = ALTERNATIVES_FILE, { log = console.log, force = false } = {}) {
@@ -244,6 +249,9 @@ export function importAlternatives(file = ALTERNATIVES_FILE, { log = console.log
           rating: row.rating ?? null,
           ratings_total: row.ratings_total ?? null,
           discovered_at: row.discovered_at,
+          // Absent in snapshots written before fingerprinting; those parts get
+          // re-searched once, which is the correct outcome.
+          config_hash: row.config_hash ?? null,
         });
         imported++;
       }

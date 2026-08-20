@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS listings (
   sku       TEXT,
   query     TEXT,
   alt_query TEXT,
+  alt_reject TEXT,
   url       TEXT,
   allow_html INTEGER NOT NULL DEFAULT 0,
   UNIQUE (part_id, retailer)
@@ -65,6 +66,7 @@ CREATE TABLE IF NOT EXISTS alternatives (
   rating        REAL,
   ratings_total INTEGER,
   discovered_at TEXT NOT NULL,
+  config_hash   TEXT,
   UNIQUE (part_id, asin)
 );
 
@@ -80,6 +82,21 @@ CREATE TABLE IF NOT EXISTS fetch_runs (
   errors       TEXT
 );
 `);
+
+/*
+ * Columns added after the first release. CREATE TABLE IF NOT EXISTS silently
+ * leaves an existing table alone, so a database created before a column existed
+ * would fail with "no such column" on the next run. data/ is disposable, but a
+ * crash is a poor way to learn that.
+ */
+function ensureColumn(table, column, definition) {
+  const present = db.pragma(`table_info(${table})`).some((c) => c.name === column);
+  if (!present) db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+}
+
+ensureColumn('listings', 'alt_query', 'TEXT');
+ensureColumn('listings', 'alt_reject', 'TEXT');
+ensureColumn('alternatives', 'config_hash', 'TEXT');
 
 export const nowIso = () => new Date().toISOString();
 
