@@ -7,7 +7,8 @@ Tracks the cheapest current price per part across retailers, keeps full price
 history in SQLite, draws a canvas sparkline per part, totals the build against a
 **$1,315 baseline**, and flags any part that drops 10%+ below its own 30-day average.
 It also suggests **alternatives for each part** — other products that fill the same
-slot — so a part sitting over target becomes a decision rather than just a red number.
+slot — and lets you swap one into the build so the totals update, so a part sitting over
+target becomes a decision rather than just a red number.
 
 ## Run it
 
@@ -259,17 +260,22 @@ Two things that make this step easy to get stuck on:
   (tests, fetch, history commit, static build) succeeds.
 
 To use real prices instead of sample data, add whichever you have under
-**Settings → Secrets and variables → Actions**: `KEEPA_API_KEY`, `BESTBUY_API_KEY`,
-or `PAAPI_ACCESS_KEY` + `PAAPI_SECRET_KEY` + `PAAPI_PARTNER_TAG`. The workflow picks
-up whatever is present and falls back to sample data otherwise.
+**Settings → Secrets and variables → Actions**: `CANOPY_API_KEY`, `KEEPA_API_KEY`,
+`BESTBUY_API_KEY`, or `PAAPI_ACCESS_KEY` + `PAAPI_SECRET_KEY` + `PAAPI_PARTNER_TAG`. The
+workflow picks up whatever is present and falls back to sample data otherwise.
 
-How it holds price history without a database server: each run restores SQLite from
-`history/price-history.ndjson`, fetches, and writes the file back. It's append-only text,
-so a twice-daily fetch adds a couple of KB that git stores as a small delta — where a
-committed SQLite file would be a fresh ~1 MB binary blob every run.
+How it holds state without a database server: `data/` is rebuilt from nothing on every
+run, so the repo carries the record instead. Each run restores SQLite from
+`history/price-history.ndjson` and `history/alternatives.ndjson`, fetches, and writes both
+back. It's plain text, so a twice-daily fetch adds a couple of KB that git stores as a
+small delta — where a committed SQLite file would be a fresh ~1 MB binary blob every run.
+
+Restoring both matters, not just the prices: without the alternatives file the table
+starts empty each run, so the suggestions never reach the published site *and* every part
+looks overdue for a re-search — turning a weekly refresh into all nine parts twice a day.
 
 ```bash
-npm run history:import   # NDJSON  → SQLite
+npm run history:import   # NDJSON  → SQLite  (prices and alternatives)
 npm run history:export   # SQLite  → NDJSON
 npm run site             # build ./site for Pages
 ```
@@ -341,6 +347,29 @@ with its price, the difference against your current pick, and its rating.
 They are **suggestions, not tracked parts**. Nothing about them is verified against your
 build: search cannot tell a 750W ATX 3.1 unit from a 750W SFX one, or a DDR4 kit from a
 DDR5 one. Check the specification before buying — the panel says so too.
+
+### Swapping one into the build
+
+Each alternative has a **Use this** button. Pressing it stands that product in for the
+part: the row shows the new title and price, the build total, vs-baseline and at-target
+counts all recompute, and a bar at the top of the page says how many parts are swapped
+with a **Reset to tracked parts** button. `↩ back to <part>` on the row undoes one.
+
+Two things a swap deliberately does *not* do:
+
+- **It shows no price history.** The sparkline, 30-day average and lowest-seen belong to
+  the part you replaced. Presenting them under a different product would be a claim the
+  data does not support, so they read `—` and the sparkline says "no history for this
+  product". The build total's own trend line hides for the same reason: once a part is
+  swapped it is a different build, and its past is not evidence about it.
+- **It never swaps in something unpriced.** That would quietly drop a part out of the
+  total rather than change it, so those buttons are disabled. This also makes swapping
+  the fix for a part the tracker cannot price: pick a priced alternative and the total
+  is complete again.
+
+Choices live in `localStorage`, so they survive a reload but are per-browser — the
+published site is static and has nowhere to write them back to. To make a swap permanent,
+change the part in `config/parts.json`.
 
 **Cost.** One search returns roughly 26 products for the same ~$0.01 as a single product
 lookup, so discovery costs **one request per part, not one per alternative** — there is a
@@ -440,6 +469,7 @@ clear` removes it.
   `★ lowest yet` badge; the footer shows the cheapest the whole build has ever been.
 - **Alternatives** — parts with suggestions carry a disclosure under the name; it
   expands a list beneath the row, cheapest first, and stays open until you close it.
+  **Use this** swaps one into the build and updates every total.
 - **Status** — `▼ n% drop` when the alert rule fires, `at target` when at or below
   the configured target, `stale` when the last observation is over a week old.
 
@@ -481,8 +511,11 @@ src/
   export-static.js  builds ./site for GitHub Pages
 public/       index.html · app.js (canvas sparklines) · styles.css
 data/         prices.db — disposable, gitignored, rebuilt from history/ on demand
-history/      price-history.ndjson — the committed record, deliberately outside data/
-              so `rm -rf data` to reset the database cannot take the history with it
+history/      price-history.ndjson — the committed price record
+              alternatives.ndjson — the committed suggestions snapshot
+              deliberately outside data/, so `rm -rf data` to reset the database cannot
+              take the record with it — and so CI, which rebuilds data/ from scratch every
+              run, can restore both instead of starting empty
 .github/      workflows/prices.yml — 12h fetch, weekly alternatives, commit history,
               publish to Pages
 ```

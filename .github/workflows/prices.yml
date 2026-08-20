@@ -44,9 +44,14 @@ jobs:
 
       - run: npm test
 
-      # Rebuild the database from the history committed in the repo. On the very
-      # first run there is none, and the app backfills sample data instead.
-      - name: Restore price history
+      # Rebuild the database from the record committed in the repo — price
+      # history and the alternatives snapshot both. On the very first run there
+      # is none, and the app backfills sample data instead.
+      #
+      # This has to precede the refresh below: without it the alternatives table
+      # starts empty, every part looks stale, and the weekly cadence turns into
+      # a search for all nine parts twice a day.
+      - name: Restore tracked data
         run: npm run history:import
 
       - name: Fetch current prices
@@ -69,21 +74,21 @@ jobs:
           CANOPY_API_KEY: ${{ secrets.CANOPY_API_KEY }}
         run: npm run alternatives
 
-      - name: Save price history
+      - name: Save tracked data
         run: npm run history:export
 
       - name: Build static site
         run: npm run site
 
-      - name: Commit updated history
+      - name: Commit updated record
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add history/price-history.ndjson
+          git add history/price-history.ndjson history/alternatives.ndjson
           if git diff --staged --quiet; then
-            echo "No new observations to commit."
+            echo "Nothing new to commit."
           else
-            git commit -m "chore: update price history [skip ci]"
+            git commit -m "chore: update tracked data [skip ci]"
             git push
           fi
 
