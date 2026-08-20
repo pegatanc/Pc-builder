@@ -21,13 +21,15 @@ import { db } from './db.js';
 import { fetchJson } from './lib/http.js';
 import { parsePrice } from './lib/price.js';
 import { amazonListingUrl } from './lib/links.js';
+import { createHash } from 'node:crypto';
 
 const ENDPOINT = 'https://rest.canopyapi.co/api/amazon/search';
 const MIN_DELAY_MS = 250;
 
 const defaults = {
   enabled: true,
-  perPart: 5,
+  perPart: 8,
+  perPartOverrides: {},
   refreshDays: 7,
   minRating: 4.0,
   minReviews: 50,
@@ -35,6 +37,62 @@ const defaults = {
 };
 
 export const settings = () => ({ ...defaults, ...config.alternatives });
+
+/**
+ * Per-part settings. How many alternatives are worth showing depends on the
+ * part: a case has a handful of real rivals, while a CPU socket has a whole
+ * ladder of them and the interesting ones are at both ends of it.
+ */
+export function partSettings(partId, options = settings()) {
+  const limit = options.perPartOverrides?.[partId];
+  return Number.isFinite(limit) ? { ...options, perPart: limit } : options;
+}
+
+/**
+ * Fingerprint of everything that decides what a part's search returns.
+ *
+ * The staleness check alone is not enough: `discovered_at` says when we last
+ * asked, not what we asked. Change a query, a reject pattern or the cap and the
+ * stored snapshot is wrong immediately, yet looks fresh for another week — so
+ * a part is also due whenever its discovery settings change.
+ */
+export function discoveryFingerprint({ terms, reject = [], options = {} }) {
+  const shape = {
+    terms,
+    reject,
+    perPart: options.perPart,
+    minRating: options.minRating,
+    minReviews: options.minReviews,
+    priceBand: options.priceBand,
+  };
+  return createHash('sha256').update(JSON.stringify(shape)).digest('hex').slice(0, 16);
+}
+
+/** The search terms for a part, and where they came from. */
+export function searchTerms(part) {
+  const listing = part.listings?.find((l) => l.retailer === 'Amazon');
+  // `altQuery` overrides the tracking query where that makes a poor search —
+  // an exact-product query returns near-duplicates, and a query tuned for
+  // matching one SKU can drift on capacity or tier when used to find others.
+  return { listing, terms: listing?.altQuery || listing?.query || part.name };
+}
+
+/**
+ * Compiles the per-part `altReject` patterns. They are matched against the
+ * title case-insensitively; an unparseable pattern is skipped with a warning
+ * rather than taking the refresh down, since it comes from hand-edited config.
+ */
+export function compileRejects(patterns = []) {
+  const compiled = [];
+  for (const pattern of patterns) {
+    try {
+      compiled.push(new RegExp(pattern, 'i'));
+    } catch (err) {
+      console.warn(`[alternatives] ignoring altReject /${pattern}/: ${err.message}`);
+    }
+  }
+  return compiled;
+}
 
 /** Unwraps the search envelope, tolerating a flatter shape if it ever changes. */
 export function searchResults(payload) {
@@ -93,10 +151,14 @@ export function medianPrice(items) {
  * self-calibrating, and still throws out the cables and single sticks that
  * cluster far below whatever the part actually costs.
  */
-export function filterCandidates(items, { excludeAsins = [], reference = null, options = {} } = {}) {
+export function filterCandidates(
+  items,
+  { excludeAsins = [], reference = null, reject = [], options = {} } = {}
+) {
   const opts = { ...defaults, ...options };
   const [lowBand, highBand] = opts.priceBand;
   const excluded = new Set(excludeAsins.filter(Boolean));
+  const rejects = compileRejects(reject);
   const seen = new Set();
   const kept = [];
 
@@ -109,6 +171,10 @@ export function filterCandidates(items, { excludeAsins = [], reference = null, o
     if (item.sponsored) continue;
     if (excluded.has(item.asin) || seen.has(item.asin)) continue;
     if (item.price == null) continue;
+    // Fit, not quality: an AM5 chip is a fine processor and still cannot go in
+    // this build's AM4 board. Search has no notion of a socket, so the part
+    // says what it cannot accept.
+    if (rejects.some((re) => re.test(item.title))) continue;
 
     // Unrated listings are indistinguishable from bad ones; require evidence.
     if (opts.minRating != null && (item.rating == null || item.rating < opts.minRating)) continue;
@@ -127,13 +193,13 @@ export function filterCandidates(items, { excludeAsins = [], reference = null, o
 
 /* ---------- storage ---------- */
 
-const replaceForPart = db.transaction((partId, items, discoveredAt) => {
+const replaceForPart = db.transaction((partId, items, discoveredAt, fingerprint) => {
   db.prepare('DELETE FROM alternatives WHERE part_id = ?').run(partId);
   const insert = db.prepare(`
     INSERT INTO alternatives
-      (part_id, asin, title, brand, price_cents, currency, url, image_url, rating, ratings_total, discovered_at)
+      (part_id, asin, title, brand, price_cents, currency, url, image_url, rating, ratings_total, discovered_at, config_hash)
     VALUES
-      (@part_id, @asin, @title, @brand, @price_cents, @currency, @url, @image_url, @rating, @ratings_total, @discovered_at)
+      (@part_id, @asin, @title, @brand, @price_cents, @currency, @url, @image_url, @rating, @ratings_total, @discovered_at, @config_hash)
   `);
   for (const item of items) {
     insert.run({
@@ -148,21 +214,37 @@ const replaceForPart = db.transaction((partId, items, discoveredAt) => {
       rating: item.rating,
       ratings_total: item.ratingsTotal,
       discovered_at: discoveredAt,
+      config_hash: fingerprint,
     });
   }
 });
 
-/** Parts whose newest row is older than refreshDays, or which have none at all. */
-export function stalePartIds(partIds, { refreshDays = defaults.refreshDays, now = Date.now() } = {}) {
+/**
+ * Parts due for a refresh: never discovered, older than refreshDays, or whose
+ * discovery settings have changed since the snapshot was taken.
+ *
+ * @param {string[]} partIds
+ * @param {object}   [options]
+ * @param {Object<string,string>} [options.fingerprints]  current hash per part
+ */
+export function stalePartIds(
+  partIds,
+  { refreshDays = defaults.refreshDays, now = Date.now(), fingerprints = {} } = {}
+) {
   const rows = db
-    .prepare('SELECT part_id, MAX(discovered_at) AS newest FROM alternatives GROUP BY part_id')
+    .prepare(
+      `SELECT part_id, MAX(discovered_at) AS newest, MIN(config_hash) AS stored
+       FROM alternatives GROUP BY part_id`
+    )
     .all();
-  const newest = new Map(rows.map((r) => [r.part_id, r.newest]));
+  const snapshots = new Map(rows.map((r) => [r.part_id, r]));
   const cutoff = new Date(now - refreshDays * 86400_000).toISOString();
 
   return partIds.filter((id) => {
-    const seen = newest.get(id);
-    return !seen || seen < cutoff;
+    const snapshot = snapshots.get(id);
+    if (!snapshot || snapshot.newest < cutoff) return true;
+    const current = fingerprints[id];
+    return current != null && snapshot.stored !== current;
   });
 }
 
@@ -173,7 +255,7 @@ export function stalePartIds(partIds, { refreshDays = defaults.refreshDays, now 
  */
 export async function refreshAlternatives(parts, { log = console.log, dryRun = false, force = false } = {}) {
   const opts = settings();
-  const empty = { requests: 0, parts: 0, found: 0, errors: [], preview: [] };
+  const empty = { requests: 0, parts: 0, found: 0, errors: [], preview: [], outOfCredit: false };
 
   if (!opts.enabled) {
     log('[alternatives] disabled in config.');
@@ -184,7 +266,20 @@ export async function refreshAlternatives(parts, { log = console.log, dryRun = f
     return empty;
   }
 
-  const due = force || dryRun ? parts : parts.filter((p) => stalePartIds([p.id], opts).length);
+  // Fingerprint every part up front so one query can answer both staleness
+  // questions: too old, or asked with different settings.
+  const fingerprints = {};
+  for (const part of parts) {
+    const { listing, terms } = searchTerms(part);
+    fingerprints[part.id] = discoveryFingerprint({
+      terms,
+      reject: listing?.altReject || [],
+      options: partSettings(part.id, opts),
+    });
+  }
+
+  const dueIds = new Set(stalePartIds(parts.map((p) => p.id), { ...opts, fingerprints }));
+  const due = force || dryRun ? parts : parts.filter((p) => dueIds.has(p.id));
   if (!due.length) {
     log(`[alternatives] all ${parts.length} parts refreshed within ${opts.refreshDays} days.`);
     return empty;
@@ -194,11 +289,7 @@ export async function refreshAlternatives(parts, { log = console.log, dryRun = f
   const discoveredAt = new Date().toISOString();
 
   for (const part of due) {
-    const listing = part.listings?.find((l) => l.retailer === 'Amazon');
-    // `altQuery` overrides the tracking query where that makes a poor search —
-    // an exact-product query returns near-duplicates, and a query tuned for
-    // matching one SKU can drift on capacity or tier when used to find others.
-    const terms = listing?.altQuery || listing?.query || part.name;
+    const { listing, terms } = searchTerms(part);
     if (!terms) continue;
 
     let payload;
@@ -210,6 +301,13 @@ export async function refreshAlternatives(parts, { log = console.log, dryRun = f
       });
     } catch (err) {
       result.errors.push(`alternatives: ${part.id} (${err.message})`);
+      // Out of credit is not a per-part problem, and every remaining part would
+      // fail the same way while still being counted as a spent request. Stop.
+      if (/\b402\b/.test(err.message)) {
+        result.outOfCredit = true;
+        log('[alternatives] Canopy returned 402 Payment Required — the account is out of credit.');
+        break;
+      }
       continue;
     }
 
@@ -217,14 +315,15 @@ export async function refreshAlternatives(parts, { log = console.log, dryRun = f
     const items = filterCandidates(raw, {
       excludeAsins: (part.listings || []).map((l) => l.asin),
       reference: part.currentPrice ?? null,
-      options: opts,
+      reject: listing?.altReject || [],
+      options: partSettings(part.id, opts),
     });
 
     result.parts++;
     result.found += items.length;
     result.preview.push({ partId: part.id, name: part.name, terms, returned: raw.length, items });
 
-    if (!dryRun) replaceForPart(part.id, items, discoveredAt);
+    if (!dryRun) replaceForPart(part.id, items, discoveredAt, fingerprints[part.id]);
     log(`[alternatives] ${part.id}: ${raw.length} returned → ${items.length} kept`);
   }
 
