@@ -245,7 +245,7 @@ function cycleSort(column) {
   else sortState = null;
 
   saveSort(sortState);
-  if (lastData) renderTable(lastData);
+  rerender();
 }
 
 function wireSortHeaders() {
@@ -282,7 +282,7 @@ const expanded = new Set();
 function toggleAlternatives(partId) {
   if (expanded.has(partId)) expanded.delete(partId);
   else expanded.add(partId);
-  if (lastData) renderTable(lastData);
+  rerender();
 }
 
 /** The expansion row: one line per alternative, cheapest first. */
@@ -317,7 +317,23 @@ function renderAlternativesRow(item, currency, columnCount) {
       alt.rating ? `${alt.rating}★ ${alt.ratingsTotal ?? ''}`.trim() : ''
     );
 
-    entry.append(title, price, delta, rating);
+    const chosen = selections[item.id] === alt.asin;
+    const use = el('button', 'alt-use', chosen ? '✓ in build' : 'Use this');
+    use.type = 'button';
+    if (chosen) use.classList.add('is-chosen');
+    // Nothing without a price can enter the build — it would silently drop a
+    // part out of the total instead of changing it.
+    if (alt.price == null) {
+      use.disabled = true;
+      use.textContent = 'no price';
+      use.title = 'No price available, so this cannot be swapped in';
+    } else {
+      use.setAttribute('aria-pressed', String(chosen));
+      use.title = chosen ? 'Put the original part back' : `Swap this in for ${item.replaces ?? item.name}`;
+      use.addEventListener('click', () => selectAlternative(item.id, alt.asin));
+    }
+
+    entry.append(title, price, delta, rating, use);
     list.append(entry);
   }
 
@@ -329,6 +345,184 @@ function renderAlternativesRow(item, currency, columnCount) {
   cell.append(list, note);
   row.append(cell);
   return row;
+}
+
+/* ---------- part selection ---------- */
+
+/*
+ * Swapping an alternative into the build. Purely client-side: the published
+ * site is static, so there is nowhere to write a choice back to. localStorage
+ * makes it survive a reload, which is what a shortlist needs, at the cost of
+ * being per-browser. `npm run price` and config/parts.json remain the way to
+ * make a swap permanent.
+ */
+const SELECTION_KEY = 'pc-tracker-selections';
+
+function loadSelections() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(SELECTION_KEY) || '{}');
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
+    // Values must be ASINs; anything else is a stale or hand-edited entry.
+    return Object.fromEntries(
+      Object.entries(raw).filter(([, asin]) => typeof asin === 'string' && asin)
+    );
+  } catch {
+    return {};
+  }
+}
+
+function saveSelections(selections) {
+  try {
+    if (Object.keys(selections).length) {
+      localStorage.setItem(SELECTION_KEY, JSON.stringify(selections));
+    } else {
+      localStorage.removeItem(SELECTION_KEY);
+    }
+  } catch {
+    // Private browsing, or a full quota. The swap still applies for this visit.
+  }
+}
+
+let selections = loadSelections();
+
+function selectAlternative(partId, asin) {
+  if (selections[partId] === asin) delete selections[partId];
+  else selections[partId] = asin;
+  saveSelections(selections);
+  rerender();
+}
+
+function clearSelections() {
+  selections = {};
+  saveSelections(selections);
+  rerender();
+}
+
+/**
+ * Rebuilds the view with the chosen alternatives standing in for their parts.
+ * Pure: takes the fetched data and the choices, returns a new object. Every
+ * consumer — summary cards, table, copy-links — reads the result, so a swap
+ * cannot show up in one place and not another.
+ */
+function applySelections(data, chosen) {
+  const active = [];
+
+  const items = data.items.map((item) => {
+    const asin = chosen[item.id];
+    if (!asin) return item;
+
+    const alt = (item.alternatives || []).find((a) => a.asin === asin);
+    // A price is what makes a swap meaningful; without one the total would
+    // quietly drop a part. Discovery already filters these out — this is the
+    // guard for a choice saved before a refresh changed the list.
+    if (!alt || alt.price == null) return item;
+
+    active.push(item.id);
+
+    return {
+      ...item,
+      name: alt.title,
+      replaces: item.name,
+      swappedTo: alt,
+      best: {
+        retailer: 'Amazon',
+        source: 'alternative',
+        price: alt.price,
+        currency: alt.currency || data.currency,
+        inStock: true,
+        url: alt.url,
+        observedAt: alt.discoveredAt,
+        stale: false,
+      },
+      // The history belongs to the part you replaced, not to this product.
+      // Showing it under the new name would be a claim we cannot support.
+      series: [],
+      stats: {
+        ...item.stats,
+        avgWindow: null,
+        samples: 0,
+        low: null,
+        lowDay: null,
+        high: null,
+        highDay: null,
+        dropPercent: null,
+        aboveLowPercent: null,
+      },
+      flags: {
+        drop: false,
+        atOrBelowTarget: item.target != null && alt.price <= item.target,
+        atLowest: false,
+        noPrice: false,
+        stale: false,
+      },
+    };
+  });
+
+  if (!active.length) return data;
+
+  const priced = items.filter((i) => i.best);
+  const total = priced.reduce((sum, i) => sum + i.best.price, 0);
+  const baseline = data.summary.baseline;
+
+  return {
+    ...data,
+    items,
+    // The build total's trend describes the build as configured. Once a part is
+    // swapped it is a different build, and its own past is not evidence about it.
+    totalSeries: [],
+    selection: { count: active.length, partIds: active },
+    summary: {
+      ...data.summary,
+      total: Number(total.toFixed(2)),
+      totalLow: null,
+      totalLowDay: null,
+      pricedParts: priced.length,
+      baselineDelta: Number((total - baseline).toFixed(2)),
+      baselineDeltaPercent: baseline
+        ? Number((((total - baseline) / baseline) * 100).toFixed(1))
+        : null,
+      alerts: items.filter((i) => i.flags.drop).length,
+      atTarget: items.filter((i) => i.flags.atOrBelowTarget).length,
+    },
+  };
+}
+
+/**
+ * A standing reminder that the totals describe a modified build, with the way
+ * back. Hidden entirely when nothing is swapped, so the default view is unchanged.
+ */
+function renderSelectionBar(view) {
+  const host = document.getElementById('selection-bar');
+  if (!host) return;
+
+  const count = view.selection?.count ?? 0;
+  host.replaceChildren();
+  host.hidden = !count;
+  if (!count) return;
+
+  const swapped = view.items.filter((i) => i.swappedTo);
+  const text = el(
+    'div',
+    'selection-text',
+    `${count} part${count === 1 ? '' : 's'} swapped — totals below describe your modified build.`
+  );
+
+  const names = el('div', 'selection-names');
+  for (const item of swapped) {
+    names.append(el('span', 'selection-chip', `${item.replaces} → ${item.swappedTo.title.slice(0, 44)}`));
+  }
+
+  const reset = el('button', 'selection-reset', 'Reset to tracked parts');
+  reset.type = 'button';
+  reset.addEventListener('click', clearSelections);
+
+  const note = el(
+    'div',
+    'selection-note',
+    'Saved in this browser only. To make a swap permanent, set the part in config/parts.json.'
+  );
+
+  host.append(text, names, reset, note);
 }
 
 /* ---------- owner recognition ---------- */
@@ -454,7 +648,7 @@ function wireCopyLinks() {
 
   button.addEventListener('click', async () => {
     if (!lastData) return;
-    const lines = partLinkList(lastData);
+    const lines = partLinkList(currentView());
 
     if (!lines.length) {
       button.textContent = 'No links yet';
@@ -566,7 +760,18 @@ function renderPartRow(item, currency) {
   } else {
     nameNode.textContent = item.name;
   }
-  partCell.append(nameNode, el('div', 'part-meta', `${item.category} · ${item.spec || item.model || ''}`));
+  const meta = item.swappedTo
+    ? `${item.category} · swapped in for ${item.replaces}`
+    : `${item.category} · ${item.spec || item.model || ''}`;
+  partCell.append(nameNode, el('div', 'part-meta', meta));
+
+  if (item.swappedTo) {
+    nameNode.classList.add('part-name-swapped');
+    const revert = el('button', 'revert', `↩ back to ${item.replaces}`);
+    revert.type = 'button';
+    revert.addEventListener('click', () => selectAlternative(item.id, item.swappedTo.asin));
+    partCell.append(revert);
+  }
 
   if (item.alternatives?.length) {
     const open = expanded.has(item.id);
@@ -642,7 +847,13 @@ function renderPartRow(item, currency) {
       attachSparklineTooltip(canvas, item.series, options);
     });
   } else {
-    sparkCell.append(el('span', 'spark-empty', 'not enough history'));
+    sparkCell.append(
+      el(
+        'span',
+        'spark-empty',
+        item.swappedTo ? 'no history for this product' : 'not enough history'
+      )
+    );
   }
   sparkCell.dataset.label = '90-day history';
   row.append(sparkCell);
@@ -687,6 +898,7 @@ function renderPartRow(item, currency) {
   if (item.flags.atOrBelowTarget) stack.append(pill('at target', 'pill-good'));
   if (item.flags.stale) stack.append(pill('stale', 'pill-warn'));
   if (item.flags.noPrice) stack.append(pill('unpriced', 'pill-muted'));
+  if (item.swappedTo) stack.append(pill('swapped', 'pill-swap'));
   if (!stack.childElementCount) stack.append(pill('tracking', 'pill-muted'));
   statusCell.append(stack);
   statusCell.dataset.label = 'Status';
@@ -790,7 +1002,21 @@ function sourcesScheduleText(sources) {
 
 /* ---------- boot ---------- */
 
+// The server's answer, untouched. Everything rendered is derived from it, so a
+// swap is never baked into the data a later render reads back.
 let lastData = null;
+
+function currentView() {
+  return applySelections(lastData, selections);
+}
+
+function rerender() {
+  if (!lastData) return;
+  const view = currentView();
+  renderSummary(view);
+  renderTable(view);
+  renderSelectionBar(view);
+}
 
 // Set by index.html; `npm run site` rewrites it to 'static' for GitHub Pages.
 const IS_STATIC = window.__TRACKER_MODE__ === 'static';
@@ -815,8 +1041,7 @@ async function load() {
   window.__schedule = sourceInfo.schedule;
 
   lastData = data;
-  renderSummary(data);
-  renderTable(data);
+  rerender();
   renderMeta(data, sourceInfo.sources);
   applyMode(data);
   renderOwnerBadge(await recogniseOwner(sourceInfo.site?.ownerKeyHash));
@@ -858,7 +1083,7 @@ document.getElementById('refresh').addEventListener('click', async (event) => {
 let resizeTimer;
 window.addEventListener('resize', () => {
   clearTimeout(resizeTimer);
-  resizeTimer = setTimeout(() => lastData && renderTable(lastData), 150);
+  resizeTimer = setTimeout(() => lastData && renderTable(currentView()), 150);
 });
 
 load().catch((err) => {

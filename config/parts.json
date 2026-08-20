@@ -125,7 +125,8 @@
         {
           "retailer": "Amazon",
           "asin": "B0C89FCDFP",
-          "url": "https://www.amazon.com/dp/B0C89FCDFP"
+          "url": "https://www.amazon.com/dp/B0C89FCDFP",
+          "altQuery": "ATX mid tower PC case airflow tempered glass"
         }
       ]
     },

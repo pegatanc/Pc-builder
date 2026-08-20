@@ -198,3 +198,115 @@ test('history from a de-listed retailer stays in the record but not in the build
   assert.equal(result.bestPrice, 9.99, 'the cheaper de-listed price must not win');
   fs.rmSync(dir, { recursive: true, force: true });
 });
+
+/**
+ * The alternatives snapshot. Before this round-trip existed, the table started
+ * empty on every CI run: the suggestions never reached the published site, and
+ * every part looked stale, so the weekly cadence became a search for all nine
+ * parts twice a day.
+ */
+function altLine(overrides = {}) {
+  return JSON.stringify({
+    part_id: 'cpu-ryzen-7-5700x',
+    asin: 'B0TEST0001',
+    title: 'A different CPU',
+    price_cents: 15999,
+    currency: 'USD',
+    url: 'https://www.amazon.com/dp/B0TEST0001',
+    rating: 4.5,
+    ratings_total: 900,
+    discovered_at: '2026-08-01T00:00:00.000Z',
+    ...overrides,
+  });
+}
+
+test('alternatives survive a fresh database, and the staleness check with them', () => {
+  const dir = tempDir();
+  fs.writeFileSync(path.join(dir, 'alternatives.ndjson'), altLine() + '\n');
+
+  const out = runNode(
+    `
+    const { importAlternatives } = await import('./src/history.js');
+    const { stalePartIds } = await import('./src/alternatives.js');
+    importAlternatives(undefined, { log: () => {} });
+    const { db } = await import('./src/db.js');
+    const rows = db.prepare('SELECT part_id, asin, price_cents FROM alternatives').all();
+    console.log(JSON.stringify({
+      rows,
+      // Restored from a week-old snapshot: not due yet at 30 days, due at 1.
+      dueAt30: stalePartIds(['cpu-ryzen-7-5700x'], { refreshDays: 30 }),
+      dueAt1: stalePartIds(['cpu-ryzen-7-5700x'], { refreshDays: 1 }),
+    }));
+    `,
+    dir
+  );
+
+  const result = JSON.parse(out.trim().split('\n').pop());
+  assert.equal(result.rows.length, 1);
+  assert.equal(result.rows[0].asin, 'B0TEST0001');
+  assert.equal(result.rows[0].price_cents, 15999);
+  assert.deepEqual(result.dueAt30, [], 'a restored snapshot must not look stale');
+  assert.deepEqual(result.dueAt1, ['cpu-ryzen-7-5700x'], 'and must still expire on schedule');
+});
+
+test('a stale snapshot never overwrites a fresher one', () => {
+  const dir = tempDir();
+  fs.writeFileSync(path.join(dir, 'alternatives.ndjson'), altLine() + '\n');
+
+  const out = runNode(
+    `
+    const { importAlternatives } = await import('./src/history.js');
+    const { db } = await import('./src/db.js');
+    const { seed } = await import('./src/seed.js');
+    seed({ log: () => {} });
+    db.prepare(\`INSERT INTO alternatives (part_id, asin, title, price_cents, discovered_at)
+                VALUES ('cpu-ryzen-7-5700x', 'B0FRESH001', 'Discovered later', 9999, '2026-08-15T00:00:00.000Z')\`).run();
+    importAlternatives(undefined, { log: () => {} });
+    console.log(JSON.stringify(db.prepare('SELECT asin FROM alternatives').all()));
+    `,
+    dir
+  );
+
+  const rows = JSON.parse(out.trim().split('\n').pop());
+  assert.deepEqual(rows.map((r) => r.asin), ['B0FRESH001'], 'the newer local refresh must win');
+});
+
+test('exporting an empty table refuses to erase a populated snapshot', () => {
+  const dir = tempDir();
+  const file = path.join(dir, 'alternatives.ndjson');
+  fs.writeFileSync(file, altLine() + '\n');
+
+  assert.throws(
+    () =>
+      runNode(
+        `
+        const { exportAlternatives } = await import('./src/history.js');
+        exportAlternatives(undefined, { log: () => {} });
+        `,
+        dir
+      ),
+    /refusing to overwrite/
+  );
+  assert.ok(fs.readFileSync(file, 'utf8').includes('B0TEST0001'), 'the file must be untouched');
+});
+
+test('an alternative for a part no longer in the catalogue is dropped', () => {
+  const dir = tempDir();
+  fs.writeFileSync(
+    path.join(dir, 'alternatives.ndjson'),
+    [altLine(), altLine({ part_id: 'part-that-was-removed', asin: 'B0GONE0001' })].join('\n') + '\n'
+  );
+
+  const out = runNode(
+    `
+    const { importAlternatives } = await import('./src/history.js');
+    const { db } = await import('./src/db.js');
+    importAlternatives(undefined, { log: () => {} });
+    console.log(JSON.stringify(db.prepare('SELECT part_id FROM alternatives').all()));
+    `,
+    dir
+  );
+
+  const rows = JSON.parse(out.trim().split('\n').pop());
+  assert.deepEqual(rows.map((r) => r.part_id), ['cpu-ryzen-7-5700x']);
+});

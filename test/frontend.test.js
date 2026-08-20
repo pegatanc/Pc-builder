@@ -120,3 +120,32 @@ test('the phone layout resets the alternatives cell out of the flex row', () => 
   assert.match(phone, /td\.alt-cell\s*\{/, 'phone layout must reset td.alt-cell to a block');
   assert.match(phone, /\.alt-item\s*\{/, 'phone layout must restack the alternative rows');
 });
+
+/** Swapping alternatives into the build. */
+test('the selection bar exists and can actually hide', () => {
+  assert.match(html, /id="selection-bar"/, 'markup needs the selection bar');
+  // `display: flex` outranks the UA stylesheet's `[hidden] { display: none }`,
+  // so without this rule the bar stays on screen with nothing in it.
+  assert.match(css, /\.selection-bar\[hidden\]\s*\{\s*display:\s*none/, 'the bar must honour [hidden]');
+});
+
+test('everything rendered goes through the selection view', () => {
+  // A render that reads lastData directly would show the tracked part in one
+  // place and the swapped one in another.
+  const boot = app.slice(app.indexOf('let lastData = null;'));
+  assert.doesNotMatch(boot, /renderTable\(lastData\)/, 'renderTable must take the derived view');
+  assert.doesNotMatch(boot, /renderSummary\(lastData\)/, 'renderSummary must take the derived view');
+  assert.match(app, /partLinkList\(currentView\(\)\)/, 'copied links must reflect swaps too');
+});
+
+test('a swap is saved under a versioned key and survives a reload', () => {
+  assert.match(app, /const SELECTION_KEY = 'pc-tracker-selections'/);
+  const fn = app.slice(app.indexOf('function loadSelections'), app.indexOf('function saveSelections'));
+  assert.match(fn, /try\s*\{/, 'a corrupt or hand-edited entry must not break boot');
+});
+
+test('an alternative with no price cannot be swapped in', () => {
+  const fn = app.slice(app.indexOf('function renderAlternativesRow'));
+  assert.match(fn, /alt\.price == null/, 'the button must check for a price');
+  assert.match(fn, /use\.disabled = true/, 'and disable itself when there is none');
+});
