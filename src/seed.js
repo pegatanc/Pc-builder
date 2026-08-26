@@ -104,7 +104,10 @@ export function seed({ log = console.log } = {}) {
           // straight into the filter.
           alt_reject: listing.altReject?.length ? JSON.stringify(listing.altReject) : null,
           // Derived when not given, so every part is clickable in the UI.
-          url: listingUrl(listing, { amazonDomain: config.sources.amazonDomain }),
+          url: listingUrl(listing, {
+            amazonDomain: config.sources.amazonDomain,
+            ebayDomain: config.sources.ebayDomain,
+          }),
           allow_html: listing.allowHtml ? 1 : 0,
         });
         listingCount++;

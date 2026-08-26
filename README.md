@@ -35,6 +35,7 @@ npm run seed      # re-sync config/parts.json into the database
 npm run price     # list manual prices; `npm run price cpu 148.99` sets one
 npm run site      # build the static site into ./site (see GitHub Pages below)
 npm run alternatives  # refresh per-part suggestions; `dry` previews, `force` ignores staleness
+npm run ebay:probe    # one live eBay search, dumped raw — use it to verify the adapter
 npm test          # robots.txt precedence, price parsing, history round-trip
 ```
 
@@ -61,6 +62,7 @@ takes precedence over a fallback for the same retailer.
 | Source    | Retailer  | Cost                    | Needs                                                     |
 | --------- | --------- | ----------------------- | --------------------------------------------------------- |
 | `canopy`  | Amazon    | paid API                | `CANOPY_API_KEY` from [canopyapi.co](https://www.canopyapi.co/) |
+| `ebay`    | eBay      | **free**                | `EBAY_CLIENT_ID`, `EBAY_CLIENT_SECRET` from [developer.ebay.com](https://developer.ebay.com/join) |
 | `paapi`   | Amazon    | free, but gated         | Approved Associates account → `PAAPI_ACCESS_KEY`, `PAAPI_SECRET_KEY`, `PAAPI_PARTNER_TAG` |
 | `keepa`   | Amazon    | paid subscription       | `KEEPA_API_KEY`                                            |
 | `bestbuy` | Best Buy  | free                    | `BESTBUY_API_KEY` — **disabled by default** (US-only retailer) |
@@ -184,6 +186,54 @@ The API and manual routes above exist precisely so you don't have to.
 
 The first real source you configure automatically deletes the synthetic sample
 history, so demo prices never contaminate your averages.
+
+### The `ebay` source
+
+**Use the [Browse API](https://developer.ebay.com/api-docs/buy/browse/resources/item_summary/methods/search).** It is eBay's current search API, it is free, and it reads
+public listing data — so it needs only an *application* token from the client
+credentials grant, with no user consent step and no affiliate account. The default tier
+allows 5,000 calls a day against the 18 this build makes. The older Finding API
+(`findItemsByKeywords`) is retired and should not be used for new work; third-party eBay
+scrapers cost money to do worse than the official API does for nothing.
+
+Setup, about five minutes:
+
+1. Sign up at [developer.ebay.com/join](https://developer.ebay.com/join) — free.
+2. Under **Application Keys**, create a **production** keyset.
+3. `EBAY_CLIENT_ID` is the **App ID**, `EBAY_CLIENT_SECRET` is the **Cert ID**.
+
+Then `npm run ebay:probe` to see a live response, or add both as repository secrets for
+the workflow.
+
+**eBay is a marketplace, not a retailer**, and three things follow from that. Each is
+configurable under `sources.ebay`, and each defaults to the conservative answer:
+
+- **Condition.** Only `NEW` counts. A used 5700X at $120 sitting in the same column as a
+  new one at $203 would quietly make the whole build look cheaper than it is. Widen it
+  with `"conditions": ["NEW", "OPEN_BOX"]` if you want to shop that way.
+- **Auctions.** Fixed-price only. A current bid is not a price you can pay.
+- **Shipping.** Delivery is added to the price, because the Amazon prices in the next
+  column include it and a column that compares $195 + $25 postage against $205 delivered
+  is lying. A listing whose delivery cost eBay cannot calculate is skipped rather than
+  counted as free — free shipping is `0.00`, absent shipping is unknown.
+
+There is also a price sanity band (`minPriceRatio`, `maxPriceRatio`) measured against the
+part's configured target, because a keyword search for "Ryzen 7 5700X" cheerfully matches
+stickers, manuals and empty boxes. With no target set for a part, the band is not applied
+at all rather than guessed at.
+
+Matching is by keyword — eBay has no ASIN — so each part carries an `{ "retailer":
+"eBay", "query": "…" }` listing in `config/parts.json`. The link in the table goes to a
+search filtered to new buy-it-now items rather than to one listing, because the specific
+item that was cheapest today will be gone next week.
+
+> **Not yet verified against a live response.** This adapter was written from eBay's
+> published schema, and this repo has no eBay credentials. That is precisely the position
+> the Canopy adapter was in when it returned nothing for every part while its tests passed
+> — they encoded the same wrong assumption as the code. `npm run ebay:probe` exists to
+> close that gap: it makes one real call, prints what came back, and saves the full
+> payload to `data/ebay-probe.json` so the fixtures in `test/ebay.test.js` can be rebuilt
+> from real data. Run it before trusting the numbers.
 
 ### The `browser` source
 

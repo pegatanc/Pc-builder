@@ -18,7 +18,8 @@
     "history:export": "node --import ./src/lib/fatal.js src/history.js export",
     "price": "node src/set-price.js",
     "owner-key": "node src/set-owner-key.js",
-    "alternatives": "node src/refresh-alternatives.js"
+    "alternatives": "node src/refresh-alternatives.js",
+    "ebay:probe": "node src/probe-ebay.js"
   },
   "dependencies": {
     "better-sqlite3": "^11.5.0",

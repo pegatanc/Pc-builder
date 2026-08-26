@@ -13,13 +13,25 @@ export function amazonListingUrl({ asin, query }, domain = 'www.amazon.com') {
   return null;
 }
 
+/**
+ * eBay listings are marketplace search results, never a fixed product page —
+ * the item that is cheapest today is gone next week. So the fallback link is
+ * the search itself, filtered the way the source filters: new, buy-it-now.
+ */
+export function ebayListingUrl({ query }, domain = 'www.ebay.com') {
+  if (!query) return null;
+  // LH_ItemCondition=3 is New, LH_BIN=1 is Buy It Now, in eBay's own URL grammar.
+  return `https://${domain}/sch/i.html?_nkw=${encodeURIComponent(query)}&LH_ItemCondition=3&LH_BIN=1`;
+}
+
 /** Whether a URL points at a specific product rather than a search results page. */
 export function isProductUrl(url) {
   return typeof url === 'string' && /\/dp\/|\/gp\/product\//.test(url);
 }
 
-export function listingUrl(listing, { amazonDomain } = {}) {
+export function listingUrl(listing, { amazonDomain, ebayDomain } = {}) {
   if (listing.url) return listing.url;
   if (listing.retailer === 'Amazon') return amazonListingUrl(listing, amazonDomain);
+  if (listing.retailer === 'eBay') return ebayListingUrl(listing, ebayDomain);
   return null;
 }

@@ -59,6 +59,8 @@ jobs:
           # Optional — set these as repository secrets to use real price sources.
           # Absent, the workflow publishes sample data and says so in the UI.
           CANOPY_API_KEY: ${{ secrets.CANOPY_API_KEY }}
+          EBAY_CLIENT_ID: ${{ secrets.EBAY_CLIENT_ID }}
+          EBAY_CLIENT_SECRET: ${{ secrets.EBAY_CLIENT_SECRET }}
           PAAPI_ACCESS_KEY: ${{ secrets.PAAPI_ACCESS_KEY }}
           PAAPI_SECRET_KEY: ${{ secrets.PAAPI_SECRET_KEY }}
           PAAPI_PARTNER_TAG: ${{ secrets.PAAPI_PARTNER_TAG }}
