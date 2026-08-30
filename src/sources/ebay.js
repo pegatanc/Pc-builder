@@ -72,6 +72,35 @@ const defaults = {
 
 export const settings = () => ({ ...defaults, ...config.sources?.ebay });
 
+/**
+ * eBay cannot price CALCULATED shipping without knowing where it is going, and
+ * returns the option with no cost at all — which this source treats as unknown
+ * and skips. Seen live: both SK hynix P41 listings on the page were CALCULATED,
+ * so the part got no eBay price whatsoever.
+ *
+ * Setting EBAY_POSTAL_CODE makes eBay do the sum. It stays an env var rather
+ * than config because a home postcode has no business in a public repo; unset
+ * simply means today's behaviour.
+ */
+export function endUserContext() {
+  const zip = process.env.EBAY_POSTAL_CODE?.trim();
+  const country = (process.env.EBAY_COUNTRY || 'US').trim();
+  if (!zip) return null;
+  return `contextualLocation=${encodeURIComponent(`country=${country},zip=${zip}`)}`;
+}
+
+/** The headers every Browse call needs, given a token. */
+export function browseHeaders(token, marketplace) {
+  const headers = {
+    authorization: `Bearer ${token}`,
+    'X-EBAY-C-MARKETPLACE-ID': marketplace,
+    accept: 'application/json',
+  };
+  const context = endUserContext();
+  if (context) headers['X-EBAY-C-ENDUSERCTX'] = context;
+  return headers;
+}
+
 /* ---------- auth ---------- */
 
 // Application tokens last two hours. Cached for the life of the process so a
@@ -203,15 +232,17 @@ export function itemSummaries(payload) {
 /**
  * The cheapest delivered listing that survives the guards.
  *
- * Server-side filters already ask for new fixed-price items, but a filter eBay
- * silently ignores is indistinguishable from one it honoured, so condition and
- * buying option are checked again here. `reference` is the part's target or last
+ * Server-side filters already ask for new fixed-price items, but re-checking
+ * here is not paranoia: a live search sent with `conditions:{NEW}` came back
+ * with Open box items in it. eBay's condition filter groups condition IDs more
+ * loosely than the name suggests, so condition and buying option are checked
+ * again against each item. `reference` is the part's target or last
  * known price; without one, the price band is not applied at all rather than
  * guessed at.
  */
 export function pickBest(items, { reference = null, options = {} } = {}) {
   const opts = { ...defaults, ...options };
-  const priced = [];
+  const candidates = [];
 
   for (const item of items) {
     if (opts.conditions?.length && item?.condition && !opts.conditions.includes(conditionKey(item.condition))) {
@@ -219,19 +250,43 @@ export function pickBest(items, { reference = null, options = {} } = {}) {
     }
     if (Array.isArray(item?.buyingOptions) && !item.buyingOptions.includes('FIXED_PRICE')) continue;
 
+    // A multi-variant listing quotes its cheapest variant, which is often a
+    // different product entirely. Seen live: one listing titled "RYZEN 9 5900X
+    // R7 5800X 5700X 5700GE R5 5600X 5600GE Pro 5650GE 4650G AM4 CPU" quoted
+    // $109.80 while every genuine 5700X on the page was $176-185. It passed the
+    // price band, and would have been recorded as the 5700X's price. eBay marks
+    // these with itemGroupType; a plain listing has no such field.
+    if (item?.itemGroupType) continue;
+
     const delivered = deliveredPrice(item, opts);
     if (!delivered) continue;
-
-    if (reference) {
-      if (delivered.total < reference * opts.minPriceRatio) continue;
-      if (delivered.total > reference * opts.maxPriceRatio) continue;
-    }
-
-    priced.push({ item, ...delivered });
+    candidates.push({ item, ...delivered });
   }
+
+  // The band needs something to measure against. A configured target is the
+  // best answer; failing that, the middle of the page — the same trick
+  // alternatives.js uses, and for the same reason. Keyword search puts
+  // accessories next to the product: a live search for "AMD Ryzen 7 5700X"
+  // returned a $21.99 CPU cooler alongside chips at $176-185, and with no
+  // anchor at all the cheapest-wins rule would record the cooler as the CPU.
+  const anchor = reference ?? medianTotal(candidates);
+
+  const priced = anchor
+    ? candidates.filter(
+        (c) => c.total >= anchor * opts.minPriceRatio && c.total <= anchor * opts.maxPriceRatio
+      )
+    : candidates;
 
   priced.sort((a, b) => a.total - b.total);
   return priced[0] ?? null;
+}
+
+/** Middle delivered price of the candidates, used when no target is configured. */
+export function medianTotal(candidates) {
+  const totals = candidates.map((c) => c.total).sort((a, b) => a - b);
+  if (!totals.length) return null;
+  const mid = Math.floor(totals.length / 2);
+  return totals.length % 2 ? totals[mid] : (totals[mid - 1] + totals[mid]) / 2;
 }
 
 /** "New" / "Brand New" / "NEW" all mean the same thing to a buyer. */
@@ -296,11 +351,7 @@ export default {
       try {
         payload = await fetchJson(url, {
           minDelayMs: MIN_DELAY_MS,
-          headers: {
-            authorization: `Bearer ${token}`,
-            'X-EBAY-C-MARKETPLACE-ID': opts.marketplace,
-            accept: 'application/json',
-          },
+          headers: browseHeaders(token, opts.marketplace),
         });
       } catch (err) {
         errors.push(`ebay: ${part.id} (${err.message})`);

@@ -1,13 +1,16 @@
 /**
  * eBay Browse API source.
  *
- * A caveat worth stating plainly: the fixture below is built from eBay's
- * published ItemSummary schema, NOT captured from a live response — this repo
- * has no eBay credentials yet. That is exactly the position the Canopy adapter
- * was in when it returned nothing for every part while its tests passed, so
- * these tests deliberately cover the decisions (condition, auctions, shipping,
- * price sanity) rather than asserting the envelope is shaped a particular way.
- * `npm run ebay:probe` captures a real response; rebuild the fixture from it.
+ * test/fixtures/ebay-search.json is a real production response to a search for
+ * "AMD Ryzen 7 5700X" — 20 items, captured with `npm run ebay:probe`. It is
+ * here because the Canopy adapter was written from documentation, returned
+ * nothing for every part, and its tests passed because they encoded the same
+ * wrong assumption as the code.
+ *
+ * Two of the tests below exist only because that response was read: eBay
+ * returned Open box items for a `conditions:{NEW}` search, and quoted $109.80
+ * for a multi-variant listing whose cheapest variant is a different CPU. Neither
+ * is visible in the schema.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -18,6 +21,7 @@ import ebay, {
   deliveredPrice,
   itemSummaries,
   pickBest,
+  medianTotal,
   accessToken,
   cachedToken,
   resetToken,
@@ -25,9 +29,18 @@ import ebay, {
   isSandbox,
   tokenUrl,
   browseUrl,
+  endUserContext,
+  browseHeaders,
 } from '../src/sources/ebay.js';
 import { listingUrl, ebayListingUrl } from '../src/lib/links.js';
 import { loadParts } from '../src/config.js';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+/** A real production response, not a hand-written one. */
+const live = JSON.parse(fs.readFileSync(path.join(ROOT, 'test/fixtures/ebay-search.json'), 'utf8'));
 
 const item = (over = {}) => ({
   itemId: 'v1|123|0',
@@ -403,4 +416,102 @@ test('an observation stores a price and a search link, never a listing', async (
     if (realId === undefined) delete process.env.EBAY_CLIENT_ID; else process.env.EBAY_CLIENT_ID = realId;
     if (realSecret === undefined) delete process.env.EBAY_CLIENT_SECRET; else process.env.EBAY_CLIENT_SECRET = realSecret;
   }
+});
+
+/* ---------- against the live response ---------- */
+
+test('the live envelope is shaped the way the adapter reads it', () => {
+  const items = itemSummaries(live);
+  assert.equal(items.length, 20);
+  const sample = items[0];
+  // Every field the adapter touches, checked against real data rather than docs.
+  assert.equal(typeof sample.price.value, 'string', 'money is a string, not a number');
+  assert.equal(typeof sample.price.currency, 'string');
+  assert.ok(Array.isArray(sample.shippingOptions));
+  assert.equal(typeof sample.shippingOptions[0].shippingCost.value, 'string');
+  assert.ok(sample.condition && sample.itemWebUrl && Array.isArray(sample.buyingOptions));
+});
+
+test('eBay returns Open box items for a conditions:{NEW} search', () => {
+  // Found live. The server-side filter groups condition IDs more loosely than
+  // its name suggests, which is why pickBest re-checks every item itself.
+  const items = itemSummaries(live);
+  assert.ok(
+    items.some((i) => i.condition === 'Open box'),
+    'the captured response really does contain Open box items'
+  );
+  const kept = pickBest(items, { reference: 150 });
+  assert.equal(kept.item.condition, 'New');
+});
+
+test('a multi-variant listing never sets the price', () => {
+  // The one that would have shipped a wrong number: "RYZEN 9 5900X R7 5800X
+  // 5700X 5700GE R5 5600X 5600GE Pro 5650GE 4650G AM4 CPU" is quoted at $109.80
+  // — its cheapest variant, a different chip — against genuine 5700X listings
+  // at $176-185. It clears the price band comfortably.
+  const items = itemSummaries(live);
+  const variants = items.filter((i) => i.itemGroupType);
+  assert.ok(variants.length, 'the captured response contains variant listings');
+  assert.ok(
+    variants.some((i) => Number(i.price.value) < 150),
+    'and at least one is cheap enough to have won on price'
+  );
+
+  const best = pickBest(items, { reference: 150 });
+  assert.equal(best.item.itemGroupType, undefined);
+  assert.ok(best.total > 150, `picked ${best.total}, which should be a real 5700X`);
+});
+
+test('with no target configured the page sets its own scale', () => {
+  // A live search for the CPU returned a $21.99 cooler fan. Cheapest-wins with
+  // no anchor records the cooler as the CPU price, so the median stands in.
+  const items = itemSummaries(live);
+  assert.ok(
+    items.some((i) => Number(i.price.value) < 30),
+    'the captured response contains a cheap accessory'
+  );
+  const best = pickBest(items, { reference: null });
+  assert.ok(best.total > 150, `picked ${best.total}, expected a CPU rather than an accessory`);
+  assert.equal(pickBest(items, { reference: 150 }).total, best.total, 'same answer either way here');
+});
+
+test('medianTotal is the middle delivered price', () => {
+  assert.equal(medianTotal([{ total: 10 }, { total: 30 }, { total: 20 }]), 20);
+  assert.equal(medianTotal([{ total: 10 }, { total: 20 }]), 15);
+  assert.equal(medianTotal([]), null);
+});
+
+/* ---------- delivery location ---------- */
+
+test('a postcode is sent only when one is set', () => {
+  const realZip = process.env.EBAY_POSTAL_CODE;
+  const realCountry = process.env.EBAY_COUNTRY;
+  try {
+    delete process.env.EBAY_POSTAL_CODE;
+    assert.equal(endUserContext(), null, 'unset means unchanged behaviour');
+    assert.equal(browseHeaders('t', 'EBAY_US')['X-EBAY-C-ENDUSERCTX'], undefined);
+
+    process.env.EBAY_POSTAL_CODE = '90210';
+    // eBay wants the whole contextualLocation value URL-encoded, commas and all.
+    assert.equal(endUserContext(), 'contextualLocation=country%3DUS%2Czip%3D90210');
+    assert.equal(
+      browseHeaders('t', 'EBAY_US')['X-EBAY-C-ENDUSERCTX'],
+      'contextualLocation=country%3DUS%2Czip%3D90210'
+    );
+
+    process.env.EBAY_COUNTRY = 'GB';
+    process.env.EBAY_POSTAL_CODE = ' SW1A 1AA ';
+    assert.equal(endUserContext(), 'contextualLocation=country%3DGB%2Czip%3DSW1A%201AA', 'trimmed');
+  } finally {
+    if (realZip === undefined) delete process.env.EBAY_POSTAL_CODE; else process.env.EBAY_POSTAL_CODE = realZip;
+    if (realCountry === undefined) delete process.env.EBAY_COUNTRY; else process.env.EBAY_COUNTRY = realCountry;
+  }
+});
+
+test('calculated shipping with no cost is still unknown, not free', () => {
+  // Exactly what the live SK hynix P41 listings looked like: eBay returned the
+  // shipping option with a type and no amount, because it had no destination.
+  const calculated = item({ shippingOptions: [{ shippingCostType: 'CALCULATED' }] });
+  assert.equal(deliveredPrice(calculated), null);
+  assert.equal(pickBest([calculated]), null, 'better no price than a wrong one');
 });

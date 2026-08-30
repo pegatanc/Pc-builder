@@ -242,13 +242,24 @@ Deletion notifications or claims the "I do not persist eBay data" exemption; thi
 is built so that exemption is honestly true, and `test/ebay.test.js` fails if a listing
 identifier or seller ever creeps back into an observation.
 
-> **Not yet verified against a live response.** This adapter was written from eBay's
-> published schema, and this repo has no eBay credentials. That is precisely the position
-> the Canopy adapter was in when it returned nothing for every part while its tests passed
-> — they encoded the same wrong assumption as the code. `npm run ebay:probe` exists to
-> close that gap: it makes one real call, prints what came back, and saves the full
-> payload to `data/ebay-probe.json` so the fixtures in `test/ebay.test.js` can be rebuilt
-> from real data. Run it before trusting the numbers.
+**Verified against production.** `test/fixtures/ebay-search.json` is a real response
+captured with `npm run ebay:probe`, and two of the guards exist only because that response
+was read rather than assumed:
+
+- eBay returned **Open box** items for a `conditions:{NEW}` search — its condition filter
+  groups condition IDs more loosely than the name suggests, so every item is re-checked.
+- A **multi-variant listing** quotes its cheapest variant. One titled *"RYZEN 9 5900X R7
+  5800X 5700X 5700GE R5 5600X 5600GE Pro 5650GE 4650G AM4 CPU"* was quoted at $109.80
+  against genuine 5700X listings at $176–185; it cleared the price band comfortably and
+  would have been recorded as the CPU's price. eBay marks these with `itemGroupType`, and
+  they are dropped.
+
+**Set `EBAY_POSTAL_CODE`.** Many listings use CALCULATED shipping, which eBay cannot price
+without knowing where the parcel is going — it returns the option with no amount, and this
+source treats a missing delivery cost as unknown rather than free, so those listings get
+no price at all. Both SK hynix P41 listings on the page were CALCULATED, which left that
+part with no eBay price. With the postcode set, eBay does the sum. It is an env var rather
+than config on purpose: a home postcode has no business in a public repo.
 
 ### The `browser` source
 

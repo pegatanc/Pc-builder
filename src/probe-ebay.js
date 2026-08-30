@@ -23,6 +23,8 @@ import ebay, {
   deliveredPrice,
   environment,
   isSandbox,
+  browseHeaders,
+  endUserContext,
 } from './sources/ebay.js';
 
 if (!ebay.isConfigured()) {
@@ -51,15 +53,14 @@ const token = await accessToken();
 console.log(`  got one (${token.slice(0, 12)}…)\n`);
 
 const url = searchUrl(query, opts);
-console.log(`Searching "${query}"\n  ${url}\n`);
+console.log(`Searching "${query}"\n  ${url}`);
+console.log(
+  endUserContext()
+    ? `  delivery calculated for ${process.env.EBAY_POSTAL_CODE}\n`
+    : '  no EBAY_POSTAL_CODE — listings with CALCULATED shipping will have no price\n'
+);
 
-const payload = await fetchJson(url, {
-  headers: {
-    authorization: `Bearer ${token}`,
-    'X-EBAY-C-MARKETPLACE-ID': opts.marketplace,
-    accept: 'application/json',
-  },
-});
+const payload = await fetchJson(url, { headers: browseHeaders(token, opts.marketplace) });
 
 const file = path.join(DATA_DIR, 'ebay-probe.json');
 fs.writeFileSync(file, JSON.stringify(payload, null, 2));
