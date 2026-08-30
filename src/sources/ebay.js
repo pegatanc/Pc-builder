@@ -78,9 +78,15 @@ export async function accessToken() {
   });
 
   if (!res.ok) {
-    // 400 here is nearly always bad credentials rather than a bad request, and
-    // saying so saves an hour of staring at the query string.
-    const detail = res.status === 400 || res.status === 401 ? ' — check EBAY_CLIENT_ID/EBAY_CLIENT_SECRET' : '';
+    // A 400/401 here is never a malformed request — it means eBay would not
+    // accept the pair. Observed with credentials that were transcribed
+    // correctly, so the message names the other cause too: a production keyset
+    // that exists in the portal but is not yet active for the account.
+    const detail =
+      res.status === 400 || res.status === 401
+        ? ' — eBay rejected the credentials. Check EBAY_CLIENT_ID/EBAY_CLIENT_SECRET, and that the' +
+          ' production keyset is active (account verified, API License Agreement accepted).'
+        : '';
     throw new Error(`eBay token request failed: HTTP ${res.status}${detail}`);
   }
 

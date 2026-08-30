@@ -227,6 +227,9 @@ test('bad credentials say so', async () => {
   resetToken();
   try {
     await assert.rejects(accessToken(), /EBAY_CLIENT_ID/);
+    // The other cause of a 401 is a keyset that is not active yet, and the
+    // message must say so — that one cost a round trip to diagnose.
+    await assert.rejects(accessToken(), /keyset is active/);
   } finally {
     globalThis.fetch = realFetch;
     resetToken();
