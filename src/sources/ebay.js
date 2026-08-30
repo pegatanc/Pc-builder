@@ -25,8 +25,30 @@
 import { config } from '../config.js';
 import { politeFetch, fetchJson } from '../lib/http.js';
 
-const TOKEN_URL = 'https://api.ebay.com/identity/v1/oauth2/token';
-const SEARCH_URL = 'https://api.ebay.com/buy/browse/v1/item_summary/search';
+/*
+ * Sandbox speaks the same API version and returns the same envelope as
+ * production, so it is the way to verify the adapter's field names without
+ * production access. What it does NOT have is real inventory — its listings are
+ * synthetic test data — so it is a verification tool, never a price source.
+ * `EBAY_ENV=sandbox` switches hosts; the scope is the same string either way.
+ */
+const HOSTS = {
+  production: 'https://api.ebay.com',
+  sandbox: 'https://api.sandbox.ebay.com',
+};
+
+export function environment() {
+  return String(process.env.EBAY_ENV || 'production').toLowerCase() === 'sandbox'
+    ? 'sandbox'
+    : 'production';
+}
+
+export const isSandbox = () => environment() === 'sandbox';
+
+const host = () => HOSTS[environment()];
+export const tokenUrl = () => `${host()}/identity/v1/oauth2/token`;
+export const browseUrl = () => `${host()}/buy/browse/v1/item_summary/search`;
+
 const SCOPE = 'https://api.ebay.com/oauth/api_scope';
 
 // A metered API, not a retail page — the 5s scraping floor does not apply.
@@ -52,7 +74,10 @@ export const settings = () => ({ ...defaults, ...config.sources?.ebay });
 let cached = null;
 
 export function cachedToken(now = Date.now()) {
-  return cached && cached.expiresAt > now + 60_000 ? cached.token : null;
+  // Sandbox and production have separate credentials, so a token minted for one
+  // is worthless to the other — the environment is part of the cache key.
+  if (cached?.environment !== environment()) return null;
+  return cached.expiresAt > now + 60_000 ? cached.token : null;
 }
 
 export function resetToken() {
@@ -67,7 +92,7 @@ export async function accessToken() {
     `${process.env.EBAY_CLIENT_ID}:${process.env.EBAY_CLIENT_SECRET}`
   ).toString('base64');
 
-  const res = await politeFetch(TOKEN_URL, {
+  const res = await politeFetch(tokenUrl(), {
     method: 'POST',
     minDelayMs: MIN_DELAY_MS,
     headers: {
@@ -95,6 +120,7 @@ export async function accessToken() {
 
   cached = {
     token: payload.access_token,
+    environment: environment(),
     expiresAt: Date.now() + Number(payload.expires_in ?? 7200) * 1000,
   };
   return cached.token;
@@ -128,7 +154,7 @@ export function searchUrl(query, options) {
   });
   const filter = buildFilter(opts);
   if (filter) params.set('filter', filter);
-  return `${SEARCH_URL}?${params}`;
+  return `${browseUrl()}?${params}`;
 }
 
 /* ---------- response ---------- */
@@ -215,11 +241,23 @@ export default {
   label: 'eBay Browse API',
   retailer: 'eBay',
   requires: ['EBAY_CLIENT_ID', 'EBAY_CLIENT_SECRET'],
-  notes: 'Free official API. New, fixed-price listings only; delivery included in the price.',
+  get notes() {
+    return isSandbox()
+      ? 'EBAY_ENV=sandbox — verification only, records no prices (sandbox listings are test data).'
+      : 'Free official API. New, fixed-price listings only; delivery included in the price.';
+  },
 
   isConfigured: () => !!(process.env.EBAY_CLIENT_ID && process.env.EBAY_CLIENT_SECRET),
 
   async fetch(parts) {
+    // Sandbox listings are invented test data. Recording them as observations
+    // would put fiction in the price history and skew the 30-day average the
+    // drop alert is measured against — the same reason the sample source stands
+    // down as soon as a real one can run.
+    if (isSandbox()) {
+      console.warn('[ebay] EBAY_ENV=sandbox — verification only, recording no prices.');
+      return [];
+    }
     const opts = settings();
     const targets = [];
     for (const part of parts) {

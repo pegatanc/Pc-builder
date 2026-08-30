@@ -21,6 +21,10 @@ import ebay, {
   accessToken,
   cachedToken,
   resetToken,
+  environment,
+  isSandbox,
+  tokenUrl,
+  browseUrl,
 } from '../src/sources/ebay.js';
 import { listingUrl, ebayListingUrl } from '../src/lib/links.js';
 import { loadParts } from '../src/config.js';
@@ -264,4 +268,85 @@ test('the fallback link is a filtered search, since eBay items come and go', () 
   assert.match(url, /LH_BIN=1/, 'buy it now only');
   assert.equal(listingUrl({ retailer: 'eBay', query: 'x' }), ebayListingUrl({ query: 'x' }));
   assert.equal(listingUrl({ retailer: 'eBay', query: 'x', url: 'https://example.test' }), 'https://example.test');
+});
+
+/* ---------- sandbox ---------- */
+
+test('EBAY_ENV switches both hosts, and defaults to production', () => {
+  const real = process.env.EBAY_ENV;
+  try {
+    delete process.env.EBAY_ENV;
+    assert.equal(environment(), 'production');
+    assert.equal(isSandbox(), false);
+    assert.match(tokenUrl(), /^https:\/\/api\.ebay\.com\//);
+    assert.match(browseUrl(), /^https:\/\/api\.ebay\.com\//);
+
+    process.env.EBAY_ENV = 'sandbox';
+    assert.equal(isSandbox(), true);
+    assert.match(tokenUrl(), /^https:\/\/api\.sandbox\.ebay\.com\//);
+    assert.match(browseUrl(), /^https:\/\/api\.sandbox\.ebay\.com\//);
+    assert.match(searchUrl('x', {}), /api\.sandbox\.ebay\.com/);
+
+    // Anything else means production — a typo must not silently point a real
+    // run at test data.
+    process.env.EBAY_ENV = 'Sandbox';
+    assert.equal(isSandbox(), true, 'case insensitive');
+    process.env.EBAY_ENV = 'prod';
+    assert.equal(environment(), 'production');
+  } finally {
+    if (real === undefined) delete process.env.EBAY_ENV;
+    else process.env.EBAY_ENV = real;
+  }
+});
+
+test('a token minted for one environment is never reused in the other', async () => {
+  const realFetch = globalThis.fetch;
+  const realEnv = process.env.EBAY_ENV;
+  const realId = process.env.EBAY_CLIENT_ID;
+  const realSecret = process.env.EBAY_CLIENT_SECRET;
+  let calls = 0;
+
+  globalThis.fetch = async () => {
+    calls++;
+    return { ok: true, status: 200, json: async () => ({ access_token: `tok-${calls}`, expires_in: 7200 }) };
+  };
+  process.env.EBAY_CLIENT_ID = 'id';
+  process.env.EBAY_CLIENT_SECRET = 'secret';
+  resetToken();
+
+  try {
+    process.env.EBAY_ENV = 'sandbox';
+    assert.equal(await accessToken(), 'tok-1');
+    // Sandbox and production have different credentials, so the cached sandbox
+    // token is worthless against production.
+    process.env.EBAY_ENV = 'production';
+    assert.equal(cachedToken(), null, 'the cache must not cross environments');
+    assert.equal(await accessToken(), 'tok-2');
+    assert.equal(calls, 2);
+  } finally {
+    globalThis.fetch = realFetch;
+    resetToken();
+    if (realEnv === undefined) delete process.env.EBAY_ENV; else process.env.EBAY_ENV = realEnv;
+    if (realId === undefined) delete process.env.EBAY_CLIENT_ID; else process.env.EBAY_CLIENT_ID = realId;
+    if (realSecret === undefined) delete process.env.EBAY_CLIENT_SECRET; else process.env.EBAY_CLIENT_SECRET = realSecret;
+  }
+});
+
+test('sandbox records no prices at all', async () => {
+  // The important guarantee: invented listings must never reach price_history,
+  // where they would skew the 30-day average the drop alert is measured against.
+  const realEnv = process.env.EBAY_ENV;
+  const realFetch = globalThis.fetch;
+  let called = false;
+  globalThis.fetch = async () => { called = true; throw new Error('should not be reached'); };
+  process.env.EBAY_ENV = 'sandbox';
+  try {
+    const parts = [{ id: 'cpu', name: 'CPU', listings: [{ retailer: 'eBay', query: 'cpu' }] }];
+    assert.deepEqual(await ebay.fetch(parts), [], 'no observations');
+    assert.equal(called, false, 'and not even a request');
+    assert.match(ebay.notes, /sandbox/i, 'the source listing must say why it is inert');
+  } finally {
+    globalThis.fetch = realFetch;
+    if (realEnv === undefined) delete process.env.EBAY_ENV; else process.env.EBAY_ENV = realEnv;
+  }
 });

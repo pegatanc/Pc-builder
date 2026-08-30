@@ -62,7 +62,7 @@ takes precedence over a fallback for the same retailer.
 | Source    | Retailer  | Cost                    | Needs                                                     |
 | --------- | --------- | ----------------------- | --------------------------------------------------------- |
 | `canopy`  | Amazon    | paid API                | `CANOPY_API_KEY` from [canopyapi.co](https://www.canopyapi.co/) |
-| `ebay`    | eBay      | **free**                | `EBAY_CLIENT_ID`, `EBAY_CLIENT_SECRET` from [developer.ebay.com](https://developer.ebay.com/join) |
+| `ebay`    | eBay      | **free**                | `EBAY_CLIENT_ID`, `EBAY_CLIENT_SECRET` from [developer.ebay.com](https://developer.ebay.com/join); `EBAY_ENV=sandbox` to verify against the sandbox |
 | `paapi`   | Amazon    | free, but gated         | Approved Associates account → `PAAPI_ACCESS_KEY`, `PAAPI_SECRET_KEY`, `PAAPI_PARTNER_TAG` |
 | `keepa`   | Amazon    | paid subscription       | `KEEPA_API_KEY`                                            |
 | `bestbuy` | Best Buy  | free                    | `BESTBUY_API_KEY` — **disabled by default** (US-only retailer) |
@@ -204,6 +204,14 @@ Setup, about five minutes:
 
 Then `npm run ebay:probe` to see a live response, or add both as repository secrets for
 the workflow.
+
+**Sandbox.** `EBAY_ENV=sandbox` points both the token and search calls at
+`api.sandbox.ebay.com`. Sandbox keysets are issued without production's gating, and the
+sandbox answers with the same envelope, so it is the way to verify the adapter's field
+names when production access is not sorted yet — `npm run ebay:probe` prints a field-by-field
+check against what the code expects. Its listings are invented test data, though, so the
+source **records nothing at all** in sandbox mode rather than putting fiction into the
+price history.
 
 **eBay is a marketplace, not a retailer**, and three things follow from that. Each is
 configurable under `sources.ebay`, and each defaults to the conservative answer:

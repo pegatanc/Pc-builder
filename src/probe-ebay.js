@@ -15,14 +15,25 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { DATA_DIR } from './config.js';
 import { fetchJson } from './lib/http.js';
-import ebay, { accessToken, searchUrl, settings, itemSummaries, deliveredPrice } from './sources/ebay.js';
+import ebay, {
+  accessToken,
+  searchUrl,
+  settings,
+  itemSummaries,
+  deliveredPrice,
+  environment,
+  isSandbox,
+} from './sources/ebay.js';
 
 if (!ebay.isConfigured()) {
   console.error(
     'Set EBAY_CLIENT_ID and EBAY_CLIENT_SECRET first.\n\n' +
       '  1. Sign up (free): https://developer.ebay.com/join\n' +
-      '  2. Create a production keyset under Application Keys\n' +
-      '  3. App ID -> EBAY_CLIENT_ID, Cert ID -> EBAY_CLIENT_SECRET\n'
+      '  2. Create a keyset under Application Keys\n' +
+      '  3. App ID -> EBAY_CLIENT_ID, Cert ID -> EBAY_CLIENT_SECRET\n\n' +
+      'Set EBAY_ENV=sandbox to probe the sandbox instead. Sandbox keysets are\n' +
+      'issued without production gating, and answer with the same envelope — so\n' +
+      'they verify the adapter even when production access is not sorted yet.\n'
   );
   process.exit(1);
 }
@@ -30,6 +41,11 @@ if (!ebay.isConfigured()) {
 const query = process.argv.slice(2).join(' ') || 'AMD Ryzen 7 5700X';
 const opts = settings();
 
+console.log(`\nEnvironment: ${environment()}`);
+if (isSandbox()) {
+  console.log('  Sandbox listings are test data — good for checking the response');
+  console.log('  shape, useless as prices. Nothing here is recorded.');
+}
 console.log(`\nRequesting an application token…`);
 const token = await accessToken();
 console.log(`  got one (${token.slice(0, 12)}…)\n`);
@@ -62,6 +78,23 @@ for (const item of items.slice(0, 15)) {
 }
 
 console.log(`\nFull payload written to ${file}`);
+console.log('\nField check against what the adapter expects:');
+const sample = items[0];
+if (sample) {
+  const report = [
+    ['itemSummaries[]', true],
+    ['price.value is a string', typeof sample.price?.value === 'string'],
+    ['price.currency', !!sample.price?.currency],
+    ['shippingOptions[]', Array.isArray(sample.shippingOptions)],
+    ['shippingOptions[].shippingCost.value', typeof sample.shippingOptions?.[0]?.shippingCost?.value === 'string'],
+    ['condition', !!sample.condition],
+    ['buyingOptions[]', Array.isArray(sample.buyingOptions)],
+    ['itemWebUrl', !!sample.itemWebUrl],
+  ];
+  for (const [field, ok] of report) console.log(`  ${ok ? 'ok  ' : 'MISS'} ${field}`);
+  console.log('\nFirst item, raw:');
+  console.log(JSON.stringify(sample, null, 2).split('\n').slice(0, 40).join('\n'));
+}
 if (!items.length) {
   console.log('\nNothing came back. Check the filter in the URL above before assuming the code is wrong.');
 }
