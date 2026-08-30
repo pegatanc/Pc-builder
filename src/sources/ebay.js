@@ -20,6 +20,11 @@
  *      compare against do not, so delivery is added in. A like-for-like total
  *      is the whole point of the column.
  *
+ * Nothing identifying an eBay user or an individual listing is stored. Each
+ * observation keeps a price, a currency, a timestamp and a link to the filtered
+ * search — no seller, no item id, no item URL. eBay's Marketplace Account
+ * Deletion exemption is declared on that basis, so keep it true.
+ *
  * Env: EBAY_CLIENT_ID, EBAY_CLIENT_SECRET (eBay calls these App ID and Cert ID)
  */
 import { config } from '../config.js';
@@ -326,7 +331,13 @@ export default {
         price_cents: Math.round(best.total * 100),
         currency: best.item.price?.currency || 'USD',
         in_stock: 1,
-        url: best.item.itemWebUrl ?? listing.url ?? null,
+        // Deliberately the filtered search, not best.item.itemWebUrl. Two
+        // reasons, and the second is the one that matters: the cheapest listing
+        // today is gone next week, so a stored item URL rots — and recording
+        // one would persist data about a specific eBay listing, which this
+        // application declares to eBay that it does not do. The price is a
+        // number; the link is a place to look.
+        url: listing.url ?? null,
         observed_at: observedAt,
       });
     }

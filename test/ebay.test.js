@@ -350,3 +350,57 @@ test('sandbox records no prices at all', async () => {
     if (realEnv === undefined) delete process.env.EBAY_ENV; else process.env.EBAY_ENV = realEnv;
   }
 });
+
+/* ---------- what gets persisted ---------- */
+
+test('an observation stores a price and a search link, never a listing', async () => {
+  // This backs a declaration made to eBay: the application persists no data
+  // about an individual eBay listing or user. Anything that reintroduces an
+  // item id, item URL or seller here breaks that promise, so the test is the
+  // guard rather than the comment.
+  const realFetch = globalThis.fetch;
+  const realId = process.env.EBAY_CLIENT_ID;
+  const realSecret = process.env.EBAY_CLIENT_SECRET;
+  process.env.EBAY_CLIENT_ID = 'id';
+  process.env.EBAY_CLIENT_SECRET = 'secret';
+  resetToken();
+
+  globalThis.fetch = async (url) =>
+    String(url).includes('/oauth2/token')
+      ? { ok: true, status: 200, json: async () => ({ access_token: 't', expires_in: 7200 }) }
+      : {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            itemSummaries: [
+              item({
+                itemId: 'v1|SECRET-ITEM|0',
+                itemWebUrl: 'https://www.ebay.com/itm/SECRET-ITEM',
+                seller: { username: 'a-real-person' },
+              }),
+            ],
+          }),
+        };
+
+  try {
+    const listing = { retailer: 'eBay', query: 'cpu', url: 'https://www.ebay.com/sch/i.html?_nkw=cpu' };
+    const [observation] = await ebay.fetch([{ id: 'cpu', name: 'CPU', listings: [listing] }]);
+
+    assert.equal(observation.price_cents, 20500, 'the price is the point');
+    assert.equal(observation.url, listing.url, 'the link is the search, not the item');
+
+    const serialised = JSON.stringify(observation);
+    assert.doesNotMatch(serialised, /SECRET-ITEM/, 'no item id or item URL may be stored');
+    assert.doesNotMatch(serialised, /a-real-person/, 'no seller identity may be stored');
+    assert.deepEqual(
+      Object.keys(observation).sort(),
+      ['currency', 'in_stock', 'observed_at', 'part_id', 'price_cents', 'retailer', 'source', 'url'],
+      'an added field here needs the same scrutiny'
+    );
+  } finally {
+    globalThis.fetch = realFetch;
+    resetToken();
+    if (realId === undefined) delete process.env.EBAY_CLIENT_ID; else process.env.EBAY_CLIENT_ID = realId;
+    if (realSecret === undefined) delete process.env.EBAY_CLIENT_SECRET; else process.env.EBAY_CLIENT_SECRET = realSecret;
+  }
+});

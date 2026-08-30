@@ -235,6 +235,13 @@ Matching is by keyword — eBay has no ASIN — so each part carries an `{ "reta
 search filtered to new buy-it-now items rather than to one listing, because the specific
 item that was cheapest today will be gone next week.
 
+**What gets stored.** An observation keeps a price, a currency, a timestamp and that
+search link — no seller, no item id, no item URL, and nothing from an eBay user. eBay
+disables production keysets until an application either handles their Marketplace Account
+Deletion notifications or claims the "I do not persist eBay data" exemption; this source
+is built so that exemption is honestly true, and `test/ebay.test.js` fails if a listing
+identifier or seller ever creeps back into an observation.
+
 > **Not yet verified against a live response.** This adapter was written from eBay's
 > published schema, and this repo has no eBay credentials. That is precisely the position
 > the Canopy adapter was in when it returned nothing for every part while its tests passed
