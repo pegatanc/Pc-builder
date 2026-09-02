@@ -205,6 +205,15 @@ test('history from a de-listed retailer stays in the record but not in the build
  * every part looked stale, so the weekly cadence became a search for all nine
  * parts twice a day.
  */
+/**
+ * Relative, never a calendar date. `discovered_at` is the one timestamp in this
+ * file measured against the clock rather than against another row, so a fixed
+ * date is a time bomb: this fixture was written as 2026-08-01 and the suite went
+ * red on 2026-08-31, the day it passed the 30-day threshold the test asserts it
+ * is inside.
+ */
+const daysAgo = (days) => new Date(Date.now() - days * 86400_000).toISOString();
+
 function altLine(overrides = {}) {
   return JSON.stringify({
     part_id: 'cpu-ryzen-7-5700x',
@@ -215,7 +224,7 @@ function altLine(overrides = {}) {
     url: 'https://www.amazon.com/dp/B0TEST0001',
     rating: 4.5,
     ratings_total: 900,
-    discovered_at: '2026-08-01T00:00:00.000Z',
+    discovered_at: daysAgo(7),
     ...overrides,
   });
 }
@@ -260,7 +269,7 @@ test('a stale snapshot never overwrites a fresher one', () => {
     const { seed } = await import('./src/seed.js');
     seed({ log: () => {} });
     db.prepare(\`INSERT INTO alternatives (part_id, asin, title, price_cents, discovered_at)
-                VALUES ('cpu-ryzen-7-5700x', 'B0FRESH001', 'Discovered later', 9999, '2026-08-15T00:00:00.000Z')\`).run();
+                VALUES ('cpu-ryzen-7-5700x', 'B0FRESH001', 'Discovered later', 9999, '${daysAgo(1)}')\`).run();
     importAlternatives(undefined, { log: () => {} });
     console.log(JSON.stringify(db.prepare('SELECT asin FROM alternatives').all()));
     `,
