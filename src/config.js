@@ -62,6 +62,14 @@ const defaults = {
   alternatives: { enabled: true, perPart: 5, refreshDays: 7, minRating: 4.0, minReviews: 50, priceBand: [0.4, 2.5] },
   sources: {
     order: ['paapi', 'keepa', 'bestbuy', 'jsonld', 'manual', 'sample'],
+    ebay: {
+      marketplace: 'EBAY_US',
+      conditions: ['NEW'],
+      includeShipping: true,
+      minPriceRatio: 0.4,
+      maxPriceRatio: 2.5,
+      limit: 20,
+    },
     enabled: {},
     http: { userAgent: 'pc-builder-price-tracker/1.0', minDelayMsPerHost: 5000, timeoutMs: 15000, maxRetries: 2 },
   },
@@ -81,6 +89,7 @@ export function loadConfig() {
       ...defaults.sources,
       ...raw.sources,
       enabled: { ...defaults.sources.enabled, ...raw.sources?.enabled },
+      ebay: { ...defaults.sources.ebay, ...raw.sources?.ebay },
       http: { ...defaults.sources.http, ...raw.sources?.http },
     },
     targets: { ...defaults.targets, ...raw.targets },

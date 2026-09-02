@@ -1,0 +1,681 @@
+{
+  "href": "https://api.ebay.com/buy/browse/v1/item_summary/search?q=AMD+Ryzen+7+5700X&limit=20&filter=conditions%3A%7BNEW%7D%2CbuyingOptions%3A%7BFIXED_PRICE%7D&sort=price&offset=0",
+  "total": 383,
+  "limit": 20,
+  "offset": 0,
+  "itemSummaries": [
+    {
+      "itemId": "v1|275846985521|0",
+      "title": "HIGH POWER\u00ae BlueAM4 AMD Ryzen Socket AM4/ AM5 PWM CPU Cooler Fan w/ Thermal Pad",
+      "price": {
+        "value": "21.99",
+        "currency": "USD"
+      },
+      "itemHref": "https://api.ebay.com/buy/browse/v1/item/v1%7C275846985521%7C0",
+      "seller": {
+        "username": "irdrive",
+        "feedbackPercentage": "99.6",
+        "feedbackScore": 17064
+      },
+      "condition": "New",
+      "conditionId": "1000",
+      "shippingOptions": [
+        {
+          "shippingCostType": "FIXED",
+          "shippingCost": {
+            "value": "0.00",
+            "currency": "USD"
+          },
+          "minEstimatedDeliveryDate": "2026-09-02T07:00:00.000Z",
+          "maxEstimatedDeliveryDate": "2026-09-05T07:00:00.000Z"
+        }
+      ],
+      "buyingOptions": [
+        "FIXED_PRICE"
+      ],
+      "epid": "4049739581",
+      "itemWebUrl": "https://www.ebay.com/itm/275846985521?_skw=AMD+Ryzen+7+5700X&hash=item4039c2f731:g:YtMAAeSwCtJouy1e",
+      "legacyItemId": "275846985521"
+    },
+    {
+      "itemId": "v1|297953852461|595152120703",
+      "title": "AMD RYZEN 9 5900X R7 5800X 5700X 5700GE R5 5600X 5600GE Pro 5650GE 4650G AM4 CPU",
+      "itemGroupHref": "https://api.ebay.com/buy/browse/v1/item/get_items_by_item_group?item_group_id=297953852461",
+      "price": {
+        "value": "109.80",
+        "currency": "USD"
+      },
+      "itemGroupType": "SELLER_DEFINED_VARIATIONS",
+      "itemHref": "https://api.ebay.com/buy/browse/v1/item/v1%7C297953852461%7C595152120703",
+      "seller": {
+        "username": "chiyi83",
+        "feedbackPercentage": "96.8",
+        "feedbackScore": 553
+      },
+      "condition": "New",
+      "conditionId": "1000",
+      "shippingOptions": [
+        {
+          "shippingCostType": "FIXED",
+          "shippingCost": {
+            "value": "0.00",
+            "currency": "USD"
+          },
+          "minEstimatedDeliveryDate": "2026-09-11T07:00:00.000Z",
+          "maxEstimatedDeliveryDate": "2026-09-17T07:00:00.000Z"
+        }
+      ],
+      "buyingOptions": [
+        "FIXED_PRICE"
+      ],
+      "itemWebUrl": "https://www.ebay.com/itm/297953852461?_skw=AMD+Ryzen+7+5700X&hash=item455f6efc2d:g:1GwAAeSw7nZpcGYw",
+      "legacyItemId": "297953852461"
+    },
+    {
+      "itemId": "v1|800569677413|657508856893",
+      "title": "AMD RYZEN 9 5900X R7 5800X 5700X 5700GE R5 5600X 5600GE Pro 5650GE 4650G AM4 CPU",
+      "itemGroupHref": "https://api.ebay.com/buy/browse/v1/item/get_items_by_item_group?item_group_id=800569677413",
+      "price": {
+        "value": "109.80",
+        "currency": "USD"
+      },
+      "itemGroupType": "SELLER_DEFINED_VARIATIONS",
+      "itemHref": "https://api.ebay.com/buy/browse/v1/item/v1%7C800569677413%7C657508856893",
+      "seller": {
+        "username": "acetech_memory",
+        "feedbackPercentage": "93.3",
+        "feedbackScore": 34
+      },
+      "condition": "New",
+      "conditionId": "1000",
+      "shippingOptions": [
+        {
+          "shippingCostType": "FIXED",
+          "shippingCost": {
+            "value": "0.00",
+            "currency": "USD"
+          },
+          "minEstimatedDeliveryDate": "2026-09-11T07:00:00.000Z",
+          "maxEstimatedDeliveryDate": "2026-09-17T07:00:00.000Z"
+        }
+      ],
+      "buyingOptions": [
+        "FIXED_PRICE"
+      ],
+      "itemWebUrl": "https://www.ebay.com/itm/800569677413?_skw=AMD+Ryzen+7+5700X&hash=itemba65abd665:g:1GwAAeSw7nZpcGYw",
+      "legacyItemId": "800569677413"
+    },
+    {
+      "itemId": "v1|377450558512|645754025135",
+      "title": "AMD RYZEN 9 5900X R7 5800X 5700X 5700GE R5 5600X 5600GE Pro 5650GE 4650G AM4 CPU",
+      "itemGroupHref": "https://api.ebay.com/buy/browse/v1/item/get_items_by_item_group?item_group_id=377450558512",
+      "price": {
+        "value": "109.80",
+        "currency": "USD"
+      },
+      "itemGroupType": "SELLER_DEFINED_VARIATIONS",
+      "itemHref": "https://api.ebay.com/buy/browse/v1/item/v1%7C377450558512%7C645754025135",
+      "seller": {
+        "username": "star_memory",
+        "feedbackPercentage": "98.6",
+        "feedbackScore": 144
+      },
+      "condition": "New",
+      "conditionId": "1000",
+      "shippingOptions": [
+        {
+          "shippingCostType": "FIXED",
+          "shippingCost": {
+            "value": "0.00",
+            "currency": "USD"
+          },
+          "minEstimatedDeliveryDate": "2026-09-11T07:00:00.000Z",
+          "maxEstimatedDeliveryDate": "2026-09-17T07:00:00.000Z"
+        }
+      ],
+      "buyingOptions": [
+        "FIXED_PRICE"
+      ],
+      "itemWebUrl": "https://www.ebay.com/itm/377450558512?_skw=AMD+Ryzen+7+5700X&hash=item57e1ce7430:g:1GwAAeSw7nZpcGYw",
+      "legacyItemId": "377450558512"
+    },
+    {
+      "itemId": "v1|237032763837|537438274109",
+      "title": "AMD RYZEN 9 5900X R7 5800X 5700X 5700GE R5 5600X 5600GE Pro 5650GE 4650G AM4 CPU",
+      "itemGroupHref": "https://api.ebay.com/buy/browse/v1/item/get_items_by_item_group?item_group_id=237032763837",
+      "price": {
+        "value": "109.80",
+        "currency": "USD"
+      },
+      "itemGroupType": "SELLER_DEFINED_VARIATIONS",
+      "itemHref": "https://api.ebay.com/buy/browse/v1/item/v1%7C237032763837%7C537438274109",
+      "seller": {
+        "username": "computer_server_parts",
+        "feedbackPercentage": "100.0",
+        "feedbackScore": 61
+      },
+      "condition": "New",
+      "conditionId": "1000",
+      "shippingOptions": [
+        {
+          "shippingCostType": "FIXED",
+          "shippingCost": {
+            "value": "0.00",
+            "currency": "USD"
+          },
+          "minEstimatedDeliveryDate": "2026-09-11T07:00:00.000Z",
+          "maxEstimatedDeliveryDate": "2026-09-17T07:00:00.000Z"
+        }
+      ],
+      "buyingOptions": [
+        "FIXED_PRICE"
+      ],
+      "itemWebUrl": "https://www.ebay.com/itm/237032763837?_skw=AMD+Ryzen+7+5700X&hash=item373040f1bd:g:1GwAAeSw7nZpcGYw",
+      "legacyItemId": "237032763837"
+    },
+    {
+      "itemId": "v1|376883753373|645429706509",
+      "title": "AMD RYZEN 9 5900X R7 5800X 5700X 5700GE R5 5600X 5600GE Pro 5650GE 4650G AM4 CPU",
+      "itemGroupHref": "https://api.ebay.com/buy/browse/v1/item/get_items_by_item_group?item_group_id=376883753373",
+      "price": {
+        "value": "113.90",
+        "currency": "USD"
+      },
+      "itemGroupType": "SELLER_DEFINED_VARIATIONS",
+      "itemHref": "https://api.ebay.com/buy/browse/v1/item/v1%7C376883753373%7C645429706509",
+      "seller": {
+        "username": "star_memory",
+        "feedbackPercentage": "98.6",
+        "feedbackScore": 144
+      },
+      "condition": "New",
+      "conditionId": "1000",
+      "shippingOptions": [
+        {
+          "shippingCostType": "FIXED",
+          "shippingCost": {
+            "value": "0.00",
+            "currency": "USD"
+          }
+        }
+      ],
+      "buyingOptions": [
+        "FIXED_PRICE"
+      ],
+      "itemWebUrl": "https://www.ebay.com/itm/376883753373?_skw=AMD+Ryzen+7+5700X&hash=item57c005b19d:g:QzoAAeSwd6JpcNyv",
+      "legacyItemId": "376883753373"
+    },
+    {
+      "itemId": "v1|236593627294|537122453504",
+      "title": "AMD RYZEN 9 5900X R7 5800X 5700X 5700GE R5 5600X 5600GE Pro 5650GE 4650G AM4 CPU",
+      "itemGroupHref": "https://api.ebay.com/buy/browse/v1/item/get_items_by_item_group?item_group_id=236593627294",
+      "price": {
+        "value": "113.90",
+        "currency": "USD"
+      },
+      "itemGroupType": "SELLER_DEFINED_VARIATIONS",
+      "itemHref": "https://api.ebay.com/buy/browse/v1/item/v1%7C236593627294%7C537122453504",
+      "seller": {
+        "username": "computer_server_parts",
+        "feedbackPercentage": "100.0",
+        "feedbackScore": 61
+      },
+      "condition": "New",
+      "conditionId": "1000",
+      "shippingOptions": [
+        {
+          "shippingCostType": "FIXED",
+          "shippingCost": {
+            "value": "0.00",
+            "currency": "USD"
+          }
+        }
+      ],
+      "buyingOptions": [
+        "FIXED_PRICE"
+      ],
+      "itemWebUrl": "https://www.ebay.com/itm/236593627294?_skw=AMD+Ryzen+7+5700X&hash=item371614409e:g:vLgAAeSwnoZpcPPw",
+      "legacyItemId": "236593627294"
+    },
+    {
+      "itemId": "v1|266370427891|0",
+      "title": "(New) AMD Ryzen 7 5700X 8 Core 16 Thread AM4 Unlocked 3.4 GHz CPU OEM Tray",
+      "price": {
+        "value": "169.99",
+        "currency": "USD"
+      },
+      "itemHref": "https://api.ebay.com/buy/browse/v1/item/v1%7C266370427891%7C0",
+      "seller": {
+        "username": "desolate_puppy",
+        "feedbackPercentage": "99.9",
+        "feedbackScore": 5494
+      },
+      "condition": "New",
+      "conditionId": "1000",
+      "shippingOptions": [
+        {
+          "shippingCostType": "FIXED",
+          "shippingCost": {
+            "value": "5.99",
+            "currency": "USD"
+          },
+          "minEstimatedDeliveryDate": "2026-09-02T07:00:00.000Z",
+          "maxEstimatedDeliveryDate": "2026-09-05T07:00:00.000Z"
+        }
+      ],
+      "buyingOptions": [
+        "FIXED_PRICE"
+      ],
+      "itemWebUrl": "https://www.ebay.com/itm/266370427891?_skw=AMD+Ryzen+7+5700X&hash=item3e04ea2bf3:g:9U0AAeSwwatozikt",
+      "legacyItemId": "266370427891"
+    },
+    {
+      "itemId": "v1|178171158608|0",
+      "title": "(New) AMD Ryzen 7 5700X 8 Core 16 Thread AM4 Unlocked 3.4 GHz CPU OEM Tray",
+      "price": {
+        "value": "177.89",
+        "currency": "USD"
+      },
+      "itemHref": "https://api.ebay.com/buy/browse/v1/item/v1%7C178171158608%7C0",
+      "seller": {
+        "username": "technological-trend",
+        "feedbackPercentage": "99.1",
+        "feedbackScore": 907
+      },
+      "condition": "New",
+      "conditionId": "1000",
+      "shippingOptions": [
+        {
+          "shippingCostType": "FIXED",
+          "shippingCost": {
+            "value": "0.00",
+            "currency": "USD"
+          },
+          "minEstimatedDeliveryDate": "2026-09-03T07:00:00.000Z",
+          "maxEstimatedDeliveryDate": "2026-09-08T07:00:00.000Z"
+        }
+      ],
+      "buyingOptions": [
+        "FIXED_PRICE",
+        "BEST_OFFER"
+      ],
+      "itemWebUrl": "https://www.ebay.com/itm/178171158608?_skw=AMD+Ryzen+7+5700X&hash=item297bd42050:g:LLMAAeSwl4Rozilk",
+      "legacyItemId": "178171158608"
+    },
+    {
+      "itemId": "v1|377027343407|0",
+      "title": "AMD Ryzen 7 5700X - Ryzen 7 5000 Series 100-000000926 No Cooler - New Tray",
+      "price": {
+        "value": "177.90",
+        "currency": "USD"
+      },
+      "itemHref": "https://api.ebay.com/buy/browse/v1/item/v1%7C377027343407%7C0",
+      "seller": {
+        "username": "3c-market",
+        "feedbackPercentage": "100.0",
+        "feedbackScore": 830
+      },
+      "condition": "New",
+      "conditionId": "1000",
+      "shippingOptions": [
+        {
+          "shippingCostType": "FIXED",
+          "shippingCost": {
+            "value": "0.00",
+            "currency": "USD"
+          },
+          "minEstimatedDeliveryDate": "2026-09-03T07:00:00.000Z",
+          "maxEstimatedDeliveryDate": "2026-09-08T07:00:00.000Z"
+        }
+      ],
+      "buyingOptions": [
+        "FIXED_PRICE"
+      ],
+      "itemWebUrl": "https://www.ebay.com/itm/377027343407?_skw=AMD+Ryzen+7+5700X&hash=item57c894b42f:g:evgAAeSwRFVpcs6P",
+      "legacyItemId": "377027343407"
+    },
+    {
+      "itemId": "v1|389732724371|0",
+      "title": "(New) AMD Ryzen 7 5700X 8 Core 16 Thread AM4 Unlocked 3.4 GHz CPU OEM Tray",
+      "price": {
+        "value": "178.00",
+        "currency": "USD"
+      },
+      "itemHref": "https://api.ebay.com/buy/browse/v1/item/v1%7C389732724371%7C0",
+      "seller": {
+        "username": "3c_wholesaler",
+        "feedbackPercentage": "98.4",
+        "feedbackScore": 1583
+      },
+      "condition": "New",
+      "conditionId": "1000",
+      "shippingOptions": [
+        {
+          "shippingCostType": "FIXED",
+          "shippingCost": {
+            "value": "0.00",
+            "currency": "USD"
+          },
+          "minEstimatedDeliveryDate": "2026-09-03T07:00:00.000Z",
+          "maxEstimatedDeliveryDate": "2026-09-08T07:00:00.000Z"
+        }
+      ],
+      "buyingOptions": [
+        "FIXED_PRICE"
+      ],
+      "itemWebUrl": "https://www.ebay.com/itm/389732724371?_skw=AMD+Ryzen+7+5700X&hash=item5abde16e93:g:LLMAAeSwl4Rozilk",
+      "legacyItemId": "389732724371"
+    },
+    {
+      "itemId": "v1|389829138581|0",
+      "title": "AMD Ryzen 7 5700X 8-Core 16-Thread Socket AM4 CPU Processor",
+      "price": {
+        "value": "177.00",
+        "currency": "USD"
+      },
+      "itemHref": "https://api.ebay.com/buy/browse/v1/item/v1%7C389829138581%7C0",
+      "seller": {
+        "username": "3c_wholesaler",
+        "feedbackPercentage": "98.4",
+        "feedbackScore": 1583
+      },
+      "condition": "New",
+      "conditionId": "1000",
+      "shippingOptions": [
+        {
+          "shippingCostType": "FIXED",
+          "shippingCost": {
+            "value": "4.99",
+            "currency": "USD"
+          },
+          "minEstimatedDeliveryDate": "2026-09-03T07:00:00.000Z",
+          "maxEstimatedDeliveryDate": "2026-09-08T07:00:00.000Z"
+        }
+      ],
+      "buyingOptions": [
+        "FIXED_PRICE",
+        "BEST_OFFER"
+      ],
+      "itemWebUrl": "https://www.ebay.com/itm/389829138581?_skw=AMD+Ryzen+7+5700X&hash=item5ac3a09895:g:WjIAAeSw1VppzJMi",
+      "legacyItemId": "389829138581"
+    },
+    {
+      "itemId": "v1|366473792902|0",
+      "title": "(New) AMD Ryzen 7 5700X 8 Core 16 Thread AM4 Unlocked 3.4 GHz CPU OEM Tray",
+      "price": {
+        "value": "182.00",
+        "currency": "USD"
+      },
+      "itemHref": "https://api.ebay.com/buy/browse/v1/item/v1%7C366473792902%7C0",
+      "seller": {
+        "username": "ram-bank",
+        "feedbackPercentage": "97.7",
+        "feedbackScore": 487
+      },
+      "condition": "New",
+      "conditionId": "1000",
+      "shippingOptions": [
+        {
+          "shippingCostType": "FIXED",
+          "shippingCost": {
+            "value": "0.00",
+            "currency": "USD"
+          },
+          "minEstimatedDeliveryDate": "2026-09-03T07:00:00.000Z",
+          "maxEstimatedDeliveryDate": "2026-09-08T07:00:00.000Z"
+        }
+      ],
+      "buyingOptions": [
+        "FIXED_PRICE",
+        "BEST_OFFER"
+      ],
+      "itemWebUrl": "https://www.ebay.com/itm/366473792902?_skw=AMD+Ryzen+7+5700X&hash=item55538a4d86:g:LLMAAeSwl4Rozilk",
+      "legacyItemId": "366473792902"
+    },
+    {
+      "itemId": "v1|147234503639|0",
+      "title": "AMD Ryzen 7 5700X Desktop CPU R7 Processor Socket AM4 100-000000926  OEM Tray",
+      "price": {
+        "value": "177.90",
+        "currency": "USD"
+      },
+      "itemHref": "https://api.ebay.com/buy/browse/v1/item/v1%7C147234503639%7C0",
+      "seller": {
+        "username": "computer_components",
+        "feedbackPercentage": "97.9",
+        "feedbackScore": 2283
+      },
+      "condition": "New",
+      "conditionId": "1000",
+      "shippingOptions": [
+        {
+          "shippingCostType": "FIXED",
+          "shippingCost": {
+            "value": "4.99",
+            "currency": "USD"
+          },
+          "minEstimatedDeliveryDate": "2026-09-03T07:00:00.000Z",
+          "maxEstimatedDeliveryDate": "2026-09-08T07:00:00.000Z"
+        }
+      ],
+      "buyingOptions": [
+        "FIXED_PRICE",
+        "BEST_OFFER"
+      ],
+      "itemWebUrl": "https://www.ebay.com/itm/147234503639?_skw=AMD+Ryzen+7+5700X&hash=item2247dc3bd7:g:GPgAAeSwXsFpzJhH",
+      "legacyItemId": "147234503639"
+    },
+    {
+      "itemId": "v1|147234466357|0",
+      "title": "AMD Ryzen R7 5700X 8-core 16-thread 32MB 65W AM4 3.40-4.60GHz CPU processor",
+      "price": {
+        "value": "177.98",
+        "currency": "USD"
+      },
+      "itemHref": "https://api.ebay.com/buy/browse/v1/item/v1%7C147234466357%7C0",
+      "seller": {
+        "username": "computer_components",
+        "feedbackPercentage": "97.9",
+        "feedbackScore": 2283
+      },
+      "condition": "New",
+      "conditionId": "1000",
+      "shippingOptions": [
+        {
+          "shippingCostType": "FIXED",
+          "shippingCost": {
+            "value": "4.99",
+            "currency": "USD"
+          },
+          "minEstimatedDeliveryDate": "2026-09-03T07:00:00.000Z",
+          "maxEstimatedDeliveryDate": "2026-09-08T07:00:00.000Z"
+        }
+      ],
+      "buyingOptions": [
+        "FIXED_PRICE",
+        "BEST_OFFER"
+      ],
+      "itemWebUrl": "https://www.ebay.com/itm/147234466357?_skw=AMD+Ryzen+7+5700X&hash=item2247dbaa35:g:2RsAAeSwh91pzJMi",
+      "legacyItemId": "147234466357"
+    },
+    {
+      "itemId": "v1|389829208708|0",
+      "title": "AMD Ryzen 7 5700X 8-Core 16-Thread 3.4GHz Socket AM4 CPU Processor",
+      "price": {
+        "value": "177.99",
+        "currency": "USD"
+      },
+      "itemHref": "https://api.ebay.com/buy/browse/v1/item/v1%7C389829208708%7C0",
+      "seller": {
+        "username": "ram-expert",
+        "feedbackPercentage": "98.5",
+        "feedbackScore": 2892
+      },
+      "condition": "New",
+      "conditionId": "1000",
+      "shippingOptions": [
+        {
+          "shippingCostType": "FIXED",
+          "shippingCost": {
+            "value": "4.99",
+            "currency": "USD"
+          },
+          "minEstimatedDeliveryDate": "2026-09-03T07:00:00.000Z",
+          "maxEstimatedDeliveryDate": "2026-09-08T07:00:00.000Z"
+        }
+      ],
+      "buyingOptions": [
+        "FIXED_PRICE",
+        "BEST_OFFER"
+      ],
+      "itemWebUrl": "https://www.ebay.com/itm/389829208708?_skw=AMD+Ryzen+7+5700X&hash=item5ac3a1aa84:g:X6cAAeSwZbVpzJgq",
+      "legacyItemId": "389829208708"
+    },
+    {
+      "itemId": "v1|366629755770|0",
+      "title": "(New) AMD Ryzen 7 5700X 8 Core 16 Thread AM4 Unlocked 3.4 GHz CPU OEM Tray FedEx",
+      "price": {
+        "value": "184.50",
+        "currency": "USD"
+      },
+      "itemHref": "https://api.ebay.com/buy/browse/v1/item/v1%7C366629755770%7C0",
+      "seller": {
+        "username": "heresok",
+        "feedbackPercentage": "100.0",
+        "feedbackScore": 29
+      },
+      "marketingPrice": {
+        "originalPrice": {
+          "value": "205.00",
+          "currency": "USD"
+        },
+        "discountPercentage": "10",
+        "discountAmount": {
+          "value": "20.50",
+          "currency": "USD"
+        },
+        "priceTreatment": "MARKDOWN"
+      },
+      "condition": "New",
+      "conditionId": "1000",
+      "shippingOptions": [
+        {
+          "shippingCostType": "FIXED",
+          "shippingCost": {
+            "value": "0.00",
+            "currency": "USD"
+          },
+          "minEstimatedDeliveryDate": "2026-09-08T07:00:00.000Z",
+          "maxEstimatedDeliveryDate": "2026-09-21T07:00:00.000Z"
+        }
+      ],
+      "buyingOptions": [
+        "FIXED_PRICE",
+        "BEST_OFFER"
+      ],
+      "itemWebUrl": "https://www.ebay.com/itm/366629755770?_skw=AMD+Ryzen+7+5700X&hash=item555cd61b7a:g:LLMAAeSwl4Rozilk",
+      "legacyItemId": "366629755770"
+    },
+    {
+      "itemId": "v1|356812797586|0",
+      "title": "AMD Ryzen 7 5700X Desktop CPU R7 5700X Processor Socket AM4 3.4 GHz 8-Core",
+      "price": {
+        "value": "188.00",
+        "currency": "USD"
+      },
+      "itemHref": "https://api.ebay.com/buy/browse/v1/item/v1%7C356812797586%7C0",
+      "seller": {
+        "username": "weihangcomputer2015",
+        "feedbackPercentage": "99.6",
+        "feedbackScore": 1231
+      },
+      "condition": "Open box",
+      "conditionId": "1500",
+      "shippingOptions": [
+        {
+          "shippingCostType": "FIXED",
+          "shippingCost": {
+            "value": "0.00",
+            "currency": "USD"
+          },
+          "minEstimatedDeliveryDate": "2026-09-15T07:00:00.000Z",
+          "maxEstimatedDeliveryDate": "2026-09-21T07:00:00.000Z"
+        }
+      ],
+      "buyingOptions": [
+        "FIXED_PRICE",
+        "BEST_OFFER"
+      ],
+      "itemWebUrl": "https://www.ebay.com/itm/356812797586?_skw=AMD+Ryzen+7+5700X&hash=item5313b33692:g:ZF0AAOSwgPhoB7jg",
+      "legacyItemId": "356812797586"
+    },
+    {
+      "itemId": "v1|398025596211|0",
+      "title": "AMD Ryzen 7 5700X - Ryzen 7 5000 Series 100-000000926 No Cooler - New Tray",
+      "price": {
+        "value": "187.50",
+        "currency": "USD"
+      },
+      "itemHref": "https://api.ebay.com/buy/browse/v1/item/v1%7C398025596211%7C0",
+      "seller": {
+        "username": "liulong-1",
+        "feedbackPercentage": "97.6",
+        "feedbackScore": 159
+      },
+      "condition": "Open box",
+      "conditionId": "1500",
+      "shippingOptions": [
+        {
+          "shippingCostType": "FIXED",
+          "shippingCost": {
+            "value": "2.99",
+            "currency": "USD"
+          },
+          "minEstimatedDeliveryDate": "2026-09-14T07:00:00.000Z",
+          "maxEstimatedDeliveryDate": "2026-09-18T07:00:00.000Z"
+        }
+      ],
+      "buyingOptions": [
+        "FIXED_PRICE",
+        "BEST_OFFER"
+      ],
+      "epid": "15054338806",
+      "itemWebUrl": "https://www.ebay.com/itm/398025596211?_skw=AMD+Ryzen+7+5700X&hash=item5cac2c9d33:g:jDgAAeSwm-VqIUPB",
+      "legacyItemId": "398025596211"
+    },
+    {
+      "itemId": "v1|128015929256|0",
+      "title": "AMD Ryzen 7 5700X 8-Core 3.4GHz CPU Processor Socket AM4 *NEW - OPEN BOX*",
+      "price": {
+        "value": "193.49",
+        "currency": "USD"
+      },
+      "itemHref": "https://api.ebay.com/buy/browse/v1/item/v1%7C128015929256%7C0",
+      "seller": {
+        "username": "memorybank.comllc",
+        "feedbackPercentage": "99.7",
+        "feedbackScore": 2587
+      },
+      "condition": "Open box",
+      "conditionId": "1500",
+      "shippingOptions": [
+        {
+          "shippingCostType": "FIXED",
+          "shippingCost": {
+            "value": "0.00",
+            "currency": "USD"
+          },
+          "minEstimatedDeliveryDate": "2026-09-03T07:00:00.000Z",
+          "maxEstimatedDeliveryDate": "2026-09-08T07:00:00.000Z"
+        }
+      ],
+      "buyingOptions": [
+        "FIXED_PRICE",
+        "BEST_OFFER"
+      ],
+      "epid": "15054338806",
+      "itemWebUrl": "https://www.ebay.com/itm/128015929256?_skw=AMD+Ryzen+7+5700X&hash=item1dce580fa8:g:p-AAAeSwBclqdjxE",
+      "legacyItemId": "128015929256"
+    }
+  ]
+}

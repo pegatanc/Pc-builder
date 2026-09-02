@@ -29,6 +29,7 @@
   "sources": {
     "order": [
       "canopy",
+      "ebay",
       "paapi",
       "keepa",
       "bestbuy",
@@ -53,7 +54,17 @@
       "timeoutMs": 15000,
       "maxRetries": 2
     },
-    "amazonDomain": "www.amazon.com"
+    "amazonDomain": "www.amazon.com",
+    "ebay": {
+      "marketplace": "EBAY_US",
+      "conditions": [
+        "NEW"
+      ],
+      "includeShipping": true,
+      "minPriceRatio": 0.4,
+      "maxPriceRatio": 2.5,
+      "limit": 20
+    }
   },
   "targets": {
     "cpu-ryzen-7-5700x": 150,

@@ -35,6 +35,7 @@ npm run seed      # re-sync config/parts.json into the database
 npm run price     # list manual prices; `npm run price cpu 148.99` sets one
 npm run site      # build the static site into ./site (see GitHub Pages below)
 npm run alternatives  # refresh per-part suggestions; `dry` previews, `force` ignores staleness
+npm run ebay:probe    # one live eBay search, dumped raw — use it to verify the adapter
 npm test          # robots.txt precedence, price parsing, history round-trip
 ```
 
@@ -61,6 +62,7 @@ takes precedence over a fallback for the same retailer.
 | Source    | Retailer  | Cost                    | Needs                                                     |
 | --------- | --------- | ----------------------- | --------------------------------------------------------- |
 | `canopy`  | Amazon    | paid API                | `CANOPY_API_KEY` from [canopyapi.co](https://www.canopyapi.co/) |
+| `ebay`    | eBay      | **free**                | `EBAY_CLIENT_ID`, `EBAY_CLIENT_SECRET` from [developer.ebay.com](https://developer.ebay.com/join); `EBAY_ENV=sandbox` to verify against the sandbox |
 | `paapi`   | Amazon    | free, but gated         | Approved Associates account → `PAAPI_ACCESS_KEY`, `PAAPI_SECRET_KEY`, `PAAPI_PARTNER_TAG` |
 | `keepa`   | Amazon    | paid subscription       | `KEEPA_API_KEY`                                            |
 | `bestbuy` | Best Buy  | free                    | `BESTBUY_API_KEY` — **disabled by default** (US-only retailer) |
@@ -184,6 +186,80 @@ The API and manual routes above exist precisely so you don't have to.
 
 The first real source you configure automatically deletes the synthetic sample
 history, so demo prices never contaminate your averages.
+
+### The `ebay` source
+
+**Use the [Browse API](https://developer.ebay.com/api-docs/buy/browse/resources/item_summary/methods/search).** It is eBay's current search API, it is free, and it reads
+public listing data — so it needs only an *application* token from the client
+credentials grant, with no user consent step and no affiliate account. The default tier
+allows 5,000 calls a day against the 18 this build makes. The older Finding API
+(`findItemsByKeywords`) is retired and should not be used for new work; third-party eBay
+scrapers cost money to do worse than the official API does for nothing.
+
+Setup, about five minutes:
+
+1. Sign up at [developer.ebay.com/join](https://developer.ebay.com/join) — free.
+2. Under **Application Keys**, create a **production** keyset.
+3. `EBAY_CLIENT_ID` is the **App ID**, `EBAY_CLIENT_SECRET` is the **Cert ID**.
+
+Then `npm run ebay:probe` to see a live response, or add both as repository secrets for
+the workflow.
+
+**Sandbox.** `EBAY_ENV=sandbox` points both the token and search calls at
+`api.sandbox.ebay.com`. Sandbox keysets are issued without production's gating, and the
+sandbox answers with the same envelope, so it is the way to verify the adapter's field
+names when production access is not sorted yet — `npm run ebay:probe` prints a field-by-field
+check against what the code expects. Its listings are invented test data, though, so the
+source **records nothing at all** in sandbox mode rather than putting fiction into the
+price history.
+
+**eBay is a marketplace, not a retailer**, and three things follow from that. Each is
+configurable under `sources.ebay`, and each defaults to the conservative answer:
+
+- **Condition.** Only `NEW` counts. A used 5700X at $120 sitting in the same column as a
+  new one at $203 would quietly make the whole build look cheaper than it is. Widen it
+  with `"conditions": ["NEW", "OPEN_BOX"]` if you want to shop that way.
+- **Auctions.** Fixed-price only. A current bid is not a price you can pay.
+- **Shipping.** Delivery is added to the price, because the Amazon prices in the next
+  column include it and a column that compares $195 + $25 postage against $205 delivered
+  is lying. A listing whose delivery cost eBay cannot calculate is skipped rather than
+  counted as free — free shipping is `0.00`, absent shipping is unknown.
+
+There is also a price sanity band (`minPriceRatio`, `maxPriceRatio`) measured against the
+part's configured target, because a keyword search for "Ryzen 7 5700X" cheerfully matches
+stickers, manuals and empty boxes. With no target set for a part, the band is not applied
+at all rather than guessed at.
+
+Matching is by keyword — eBay has no ASIN — so each part carries an `{ "retailer":
+"eBay", "query": "…" }` listing in `config/parts.json`. The link in the table goes to a
+search filtered to new buy-it-now items rather than to one listing, because the specific
+item that was cheapest today will be gone next week.
+
+**What gets stored.** An observation keeps a price, a currency, a timestamp and that
+search link — no seller, no item id, no item URL, and nothing from an eBay user. eBay
+disables production keysets until an application either handles their Marketplace Account
+Deletion notifications or claims the "I do not persist eBay data" exemption; this source
+is built so that exemption is honestly true, and `test/ebay.test.js` fails if a listing
+identifier or seller ever creeps back into an observation.
+
+**Verified against production.** `test/fixtures/ebay-search.json` is a real response
+captured with `npm run ebay:probe`, and two of the guards exist only because that response
+was read rather than assumed:
+
+- eBay returned **Open box** items for a `conditions:{NEW}` search — its condition filter
+  groups condition IDs more loosely than the name suggests, so every item is re-checked.
+- A **multi-variant listing** quotes its cheapest variant. One titled *"RYZEN 9 5900X R7
+  5800X 5700X 5700GE R5 5600X 5600GE Pro 5650GE 4650G AM4 CPU"* was quoted at $109.80
+  against genuine 5700X listings at $176–185; it cleared the price band comfortably and
+  would have been recorded as the CPU's price. eBay marks these with `itemGroupType`, and
+  they are dropped.
+
+**Set `EBAY_POSTAL_CODE`.** Many listings use CALCULATED shipping, which eBay cannot price
+without knowing where the parcel is going — it returns the option with no amount, and this
+source treats a missing delivery cost as unknown rather than free, so those listings get
+no price at all. Both SK hynix P41 listings on the page were CALCULATED, which left that
+part with no eBay price. With the postcode set, eBay does the sum. It is an env var rather
+than config on purpose: a home postcode has no business in a public repo.
 
 ### The `browser` source
 

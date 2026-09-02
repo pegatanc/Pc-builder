@@ -29,6 +29,10 @@
             "\\bintel\\b|\\bcore\\s+i[3579]\\b|\\bxeon\\b",
             "mini pc|gaming pc|desktop computer|motherboard"
           ]
+        },
+        {
+          "retailer": "eBay",
+          "query": "AMD Ryzen 7 5700X"
         }
       ]
     },
@@ -44,6 +48,10 @@
           "retailer": "Amazon",
           "asin": "B089CWDHFZ",
           "url": "https://www.amazon.com/dp/B089CWDHFZ"
+        },
+        {
+          "retailer": "eBay",
+          "query": "MSI MAG B550 Tomahawk"
         }
       ]
     },
@@ -59,6 +67,10 @@
           "retailer": "Amazon",
           "query": "G.Skill Ripjaws V 32GB 2x16GB DDR4-3600 CL16",
           "altQuery": "32GB 2x16GB DDR4 3600 desktop memory kit"
+        },
+        {
+          "retailer": "eBay",
+          "query": "G.Skill Ripjaws V 32GB 2x16GB DDR4-3600 CL16"
         }
       ]
     },
@@ -74,6 +86,10 @@
           "retailer": "Amazon",
           "query": "SK hynix Platinum P41 1TB NVMe SSD",
           "altQuery": "1TB NVMe M.2 PCIe 4.0 internal SSD"
+        },
+        {
+          "retailer": "eBay",
+          "query": "SK hynix Platinum P41 1TB NVMe SSD"
         }
       ]
     },
@@ -88,6 +104,10 @@
         {
           "retailer": "Amazon",
           "query": "750W 80+ Gold fully modular power supply"
+        },
+        {
+          "retailer": "eBay",
+          "query": "750W 80 Plus Gold fully modular power supply"
         }
       ]
     },
@@ -103,6 +123,10 @@
           "retailer": "Amazon",
           "asin": "B0BRYWWDH2",
           "url": "https://www.amazon.com/dp/B0BRYWWDH2"
+        },
+        {
+          "retailer": "eBay",
+          "query": "ASRock Radeon RX 7900 XT 20GB"
         }
       ]
     },
@@ -118,6 +142,10 @@
           "retailer": "Amazon",
           "asin": "B07H25DYM3",
           "url": "https://www.amazon.com/dp/B07H25DYM3"
+        },
+        {
+          "retailer": "eBay",
+          "query": "Cooler Master Hyper 212 Black"
         }
       ]
     },
@@ -134,6 +162,10 @@
           "asin": "B0C89FCDFP",
           "url": "https://www.amazon.com/dp/B0C89FCDFP",
           "altQuery": "ATX mid tower PC case airflow tempered glass"
+        },
+        {
+          "retailer": "eBay",
+          "query": "NZXT H6 Flow"
         }
       ]
     },
@@ -149,6 +181,10 @@
           "retailer": "Amazon",
           "asin": "B07GB16RK7",
           "url": "https://www.amazon.com/dp/B07GB16RK7"
+        },
+        {
+          "retailer": "eBay",
+          "query": "Arctic P12 120mm case fan"
         }
       ]
     }
